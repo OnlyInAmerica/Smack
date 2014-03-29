@@ -17,22 +17,22 @@
 
 package org.jivesoftware.smack;
 
+import org.jivesoftware.smack.SmackException.NoResponseException;
+import org.jivesoftware.smack.SmackException.SecurityRequiredException;
+import org.jivesoftware.smack.XMPPException.StreamErrorException;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.packet.Presence;
+import org.jivesoftware.smack.packet.UnknownPacket;
 import org.jivesoftware.smack.parsing.ParsingExceptionCallback;
 import org.jivesoftware.smack.parsing.UnparsablePacket;
 import org.jivesoftware.smack.sasl.SASLMechanism.Challenge;
 import org.jivesoftware.smack.sasl.SASLMechanism.SASLFailure;
 import org.jivesoftware.smack.sasl.SASLMechanism.Success;
 import org.jivesoftware.smack.util.PacketParserUtils;
-
-import org.jivesoftware.smack.SmackException.NoResponseException;
-import org.jivesoftware.smack.SmackException.SecurityRequiredException;
-import org.jivesoftware.smack.XMPPException.StreamErrorException;
-import org.xmlpull.v1.XmlPullParserFactory;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
+import org.xmlpull.v1.XmlPullParserFactory;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -276,6 +276,9 @@ class PacketReader {
                         // to be sent by the server
                         resetParser();
                     }
+                    else {
+                        parseAsUnknownPacket();
+                    }
                 }
                 else if (eventType == XmlPullParser.END_TAG) {
                     if (parser.getName().equals("stream")) {
@@ -360,6 +363,8 @@ class PacketReader {
                 }
                 else if (parser.getName().equals("register")) {
                     AccountManager.getInstance(connection).setSupportsAccountCreation(true);
+                } else {
+                    parseAsUnknownPacket();
                 }
             }
             else if (eventType == XmlPullParser.END_TAG) {
@@ -392,6 +397,19 @@ class PacketReader {
                 ConnectionConfiguration.SecurityMode.disabled)
         {
             releaseConnectionIDLock();
+        }
+    }
+
+    /**
+     * Attempt to parse an {@link UnknownPacket} from this
+     * PacketReader's {@link org.xmlpull.v1.XmlPullParser}
+     */
+    private void parseAsUnknownPacket() throws Exception {
+        try {
+            UnknownPacket packet = (UnknownPacket) PacketParserUtils.parsePacketExtension(parser.getName(), parser.getNamespace(), parser);
+            connection.processPacket(packet);
+        } catch (ClassCastException ex) {
+            // ignore
         }
     }
 }

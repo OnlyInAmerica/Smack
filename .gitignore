@@ -17,3 +17,8 @@ experimental/bin
 extensions/bin
 
 target/
+
+# IntelliJ IDE artifacts
+local.properties
+.idea/
+*.iml

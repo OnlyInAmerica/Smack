@@ -17,23 +17,14 @@
 package org.jivesoftware.smack;
 
 import org.jivesoftware.smack.SmackException.AlreadyLoggedInException;
-import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.SmackException.ConnectionException;
+import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.compression.XMPPInputOutputStream;
 import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smack.parsing.ParsingExceptionCallback;
 import org.jivesoftware.smack.util.StringUtils;
 import org.jivesoftware.smack.util.dns.HostAddress;
-
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocket;
-import javax.security.auth.callback.Callback;
-import javax.security.auth.callback.CallbackHandler;
-import javax.security.auth.callback.PasswordCallback;
-import javax.security.sasl.SaslException;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -54,6 +45,15 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocket;
+import javax.security.auth.callback.Callback;
+import javax.security.auth.callback.CallbackHandler;
+import javax.security.auth.callback.PasswordCallback;
+import javax.security.sasl.SaslException;
 
 /**
  * Creates a socket connection to a XMPP server. This is the default connection
@@ -863,7 +863,7 @@ public class TCPConnection extends XMPPConnection {
      * @throws SmackException 
      * @throws IOException 
      */
-    public void connect() throws SmackException, IOException, XMPPException {
+    public void connect(boolean bindResource) throws SmackException, IOException, XMPPException {
         // Establishes the connection, readers and writers
         connectUsingConfiguration(config);
         // TODO is there a case where connectUsing.. does not throw an exception but connected is
@@ -880,7 +880,8 @@ public class TCPConnection extends XMPPConnection {
                 loginAnonymously();
             }
             else {
-                login(config.getUsername(), config.getPassword(), config.getResource());
+                login(config.getUsername(), config.getPassword(),
+                        bindResource ? config.getResource() : null);
             }
             notifyReconnection();
         }

@@ -24,11 +24,15 @@ import org.jivesoftware.smack.XMPPException.XMPPErrorException;
 import org.jivesoftware.smack.packet.Bind;
 import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.packet.Session;
-import org.jivesoftware.smack.sasl.*;
+import org.jivesoftware.smack.sasl.SASLAnonymous;
+import org.jivesoftware.smack.sasl.SASLCramMD5Mechanism;
+import org.jivesoftware.smack.sasl.SASLDigestMD5Mechanism;
+import org.jivesoftware.smack.sasl.SASLErrorException;
+import org.jivesoftware.smack.sasl.SASLExternalMechanism;
+import org.jivesoftware.smack.sasl.SASLGSSAPIMechanism;
+import org.jivesoftware.smack.sasl.SASLMechanism;
 import org.jivesoftware.smack.sasl.SASLMechanism.SASLFailure;
-
-import javax.security.auth.callback.CallbackHandler;
-import javax.security.sasl.SaslException;
+import org.jivesoftware.smack.sasl.SASLPlainMechanism;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -37,6 +41,9 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import javax.security.auth.callback.CallbackHandler;
+import javax.security.sasl.SaslException;
 
 /**
  * <p>This class is responsible authenticating the user using SASL, binding the resource
@@ -406,8 +413,8 @@ public class SASLAuthentication {
             }
 
             if (saslNegotiated) {
-                // Bind a resource for this connection and
-                return bindResourceAndEstablishSession(null);
+                // Bind a resource for this connection
+                return bindResourceAndEstablishSession("");
             }
             else {
                 throw new NoResponseException();
@@ -416,6 +423,10 @@ public class SASLAuthentication {
 
     private String bindResourceAndEstablishSession(String resource) throws XMPPErrorException,
                     ResourceBindingNotOfferedException, NoResponseException, NotConnectedException {
+        // Do not bind if null resource. Use "" if no resource is desired.
+        if (resource == null) {
+            return null;
+        }
         // Wait until server sends response containing the <bind> element
         synchronized (this) {
             if (!resourceBinded) {

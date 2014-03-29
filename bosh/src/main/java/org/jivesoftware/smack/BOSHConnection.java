@@ -17,26 +17,6 @@
 
 package org.jivesoftware.smack;
 
-import java.io.IOException;
-import java.io.PipedReader;
-import java.io.PipedWriter;
-import java.io.Writer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import javax.security.sasl.SaslException;
-
-import org.jivesoftware.smack.SmackException.NotConnectedException;
-import org.jivesoftware.smack.SmackException.AlreadyLoggedInException;
-import org.jivesoftware.smack.SmackException.ConnectionException;
-import org.jivesoftware.smack.XMPPConnection;
-import org.jivesoftware.smack.ConnectionCreationListener;
-import org.jivesoftware.smack.ConnectionListener;
-import org.jivesoftware.smack.Roster;
-import org.jivesoftware.smack.XMPPException;
-import org.jivesoftware.smack.packet.Packet;
-import org.jivesoftware.smack.packet.Presence;
-import org.jivesoftware.smack.util.StringUtils;
 import org.igniterealtime.jbosh.BOSHClient;
 import org.igniterealtime.jbosh.BOSHClientConfig;
 import org.igniterealtime.jbosh.BOSHClientConnEvent;
@@ -47,6 +27,21 @@ import org.igniterealtime.jbosh.BOSHException;
 import org.igniterealtime.jbosh.BOSHMessageEvent;
 import org.igniterealtime.jbosh.BodyQName;
 import org.igniterealtime.jbosh.ComposableBody;
+import org.jivesoftware.smack.SmackException.AlreadyLoggedInException;
+import org.jivesoftware.smack.SmackException.ConnectionException;
+import org.jivesoftware.smack.SmackException.NotConnectedException;
+import org.jivesoftware.smack.packet.Packet;
+import org.jivesoftware.smack.packet.Presence;
+import org.jivesoftware.smack.util.StringUtils;
+
+import java.io.IOException;
+import java.io.PipedReader;
+import java.io.PipedWriter;
+import java.io.Writer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import javax.security.sasl.SaslException;
 
 /**
  * Creates a connection to a XMPP server via HTTP binding.
@@ -134,7 +129,7 @@ public class BOSHConnection extends XMPPConnection {
         this.config = config;
     }
 
-    public void connect() throws SmackException {
+    public void connect(boolean bindResource) throws SmackException {
         if (connected) {
             throw new IllegalStateException("Already connected to a server.");
         }
@@ -157,7 +152,7 @@ public class BOSHConnection extends XMPPConnection {
             }
             client = BOSHClient.create(cfgBuilder.build());
 
-            client.addBOSHClientConnListener(new BOSHConnectionListener(this));
+            client.addBOSHClientConnListener(new BOSHConnectionListener(this, bindResource));
             client.addBOSHClientResponseListener(new BOSHPacketReader(this));
 
             // Initialize the debugger
@@ -549,9 +544,11 @@ public class BOSHConnection extends XMPPConnection {
     private class BOSHConnectionListener implements BOSHClientConnListener {
 
         private final BOSHConnection connection;
+        private final boolean bindResource;
 
-        public BOSHConnectionListener(BOSHConnection connection) {
+        public BOSHConnectionListener(BOSHConnection connection, boolean bindResource) {
             this.connection = connection;
+            this.bindResource = bindResource;
         }
 
         /**
@@ -575,7 +572,7 @@ public class BOSHConnection extends XMPPConnection {
                                 connection.login(
                                         config.getUsername(),
                                         config.getPassword(),
-                                        config.getResource());
+                                        bindResource ? config.getResource() : null);
                             }
                             for (ConnectionListener listener : getConnectionListeners()) {
                                  listener.reconnectionSuccessful();

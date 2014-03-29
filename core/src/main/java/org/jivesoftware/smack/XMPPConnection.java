@@ -16,6 +16,16 @@
  */
 package org.jivesoftware.smack;
 
+import org.jivesoftware.smack.SmackException.ConnectionException;
+import org.jivesoftware.smack.SmackException.NotConnectedException;
+import org.jivesoftware.smack.compression.XMPPInputOutputStream;
+import org.jivesoftware.smack.debugger.SmackDebugger;
+import org.jivesoftware.smack.filter.IQReplyFilter;
+import org.jivesoftware.smack.filter.PacketFilter;
+import org.jivesoftware.smack.packet.IQ;
+import org.jivesoftware.smack.packet.Packet;
+import org.jivesoftware.smack.packet.Presence;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
@@ -40,16 +50,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.security.sasl.SaslException;
-
-import org.jivesoftware.smack.SmackException.NotConnectedException;
-import org.jivesoftware.smack.SmackException.ConnectionException;
-import org.jivesoftware.smack.compression.XMPPInputOutputStream;
-import org.jivesoftware.smack.debugger.SmackDebugger;
-import org.jivesoftware.smack.filter.IQReplyFilter;
-import org.jivesoftware.smack.filter.PacketFilter;
-import org.jivesoftware.smack.packet.IQ;
-import org.jivesoftware.smack.packet.Packet;
-import org.jivesoftware.smack.packet.Presence;
 
 /**
  * The abstract XMPPConnection class provides an interface for connections to a
@@ -355,13 +355,32 @@ public abstract class XMPPConnection {
      * <p/>
      * Listeners will be preserved from a previous connection if the reconnection
      * occurs after an abrupt termination.
-     * 
+     *
+     * @param bindResource whether to bind this connection's XMPP resource to the XMPP server.
      * @throws XMPPException if an error occurs on the XMPP protocol level.
      * @throws SmackException if an error occurs somehwere else besides XMPP protocol level.
      * @throws IOException 
      * @throws ConnectionException with detailed information about the failed connection.
      */
-    public abstract void connect() throws SmackException, IOException, XMPPException;
+    public abstract void connect(boolean bindResource) throws SmackException, IOException, XMPPException;
+
+    /**
+     * Establishes a connection to the XMPP server and performs an automatic login
+     * only if the previous connection state was logged (authenticated). It basically
+     * creates and maintains a connection to the server.<p>
+     * <p/>
+     * Listeners will be preserved from a previous connection if the reconnection
+     * occurs after an abrupt termination.
+     *
+     * @throws XMPPException if an error occurs on the XMPP protocol level.
+     * @throws SmackException if an error occurs somehwere else besides XMPP protocol level.
+     * @throws IOException
+     * @throws ConnectionException with detailed information about the failed connection.
+     */
+    public void connect() throws SmackException, IOException, XMPPException {
+        connect(true);
+    }
+
 
     /**
      * Logs in to the server using the strongest authentication mode supported by
