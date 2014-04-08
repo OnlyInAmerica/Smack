@@ -8,6 +8,9 @@
     </startupClasses>
 
     <optionalStartupClasses>
+        <className>org.jivesoftware.smack.XMPPConnection</className>
+        <className>org.jivesoftware.smackx.EntityCapsManager</className>
+        <className>org.jivesoftware.smackx.LLServiceDiscoveryManager</className>
         <className>org.jivesoftware.smack.util.dns.JavaxResolver</className>
         <className>org.jivesoftware.smackx.ExtensionsProviderInitializer</className>
         <className>org.jivesoftware.smackx.ExtensionsStartupClasses</className>

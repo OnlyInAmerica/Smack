@@ -22,13 +22,13 @@ import org.jivesoftware.smack.proxy.ProxyInfo;
 import org.jivesoftware.smack.util.DNSUtil;
 import org.jivesoftware.smack.util.dns.HostAddress;
 
-import javax.net.SocketFactory;
-import javax.net.ssl.SSLContext;
-import javax.security.auth.callback.CallbackHandler;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import javax.net.SocketFactory;
+import javax.net.ssl.SSLContext;
+import javax.security.auth.callback.CallbackHandler;
 
 /**
  * Configuration to use while establishing the connection to the server. It is possible to
@@ -193,7 +193,7 @@ public class ConnectionConfiguration implements Cloneable {
      *
      * @param serviceName the XMPP domain of the target server.
      */
-    void setServiceName(String serviceName) {
+    public void setServiceName(String serviceName) {
         this.serviceName = serviceName;
     }
 

@@ -17,14 +17,14 @@
 
 package org.jivesoftware.smack;
 
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.TimeUnit;
-
 import org.jivesoftware.smack.SmackException.NoResponseException;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
 import org.jivesoftware.smack.filter.PacketFilter;
 import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.packet.XMPPError;
+
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Provides a mechanism to collect packets into a result queue that pass a
@@ -83,6 +83,15 @@ public class PacketCollector {
             cancelled = true;
             connection.removePacketCollector(this);
         }
+    }
+
+    /**
+    * Returns true if the packet collector is canceled.
+    *
+    * @return true if canceled, false if still active.
+    */
+    public boolean isCanceled() {
+        return cancelled;
     }
 
     /**

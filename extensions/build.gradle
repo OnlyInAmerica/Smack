@@ -8,4 +8,6 @@ Classes and methods that implement support for the various XMPP XEPs
 dependencies {
 	compile project(':core')
 	testCompile project(':core').sourceSets.test.runtimeClasspath
+    // Required for XEP-0174
+    compile 'javax.jmdns:jmdns:3.4.1'
 }

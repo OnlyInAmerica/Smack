@@ -45,17 +45,18 @@ import java.util.logging.Logger;
  * @see XMPPConnection#addPacketListener
  * @author Matt Tucker
  */
-class PacketReader {
+public class PacketReader {
 
     private static final Logger LOGGER = Logger.getLogger(PacketReader.class.getName());
     
     private Thread readerThread;
 
     private TCPConnection connection;
-    private XmlPullParser parser;
+    protected XmlPullParser parser;
+
     volatile boolean done;
 
-    private String connectionID = null;
+    protected String connectionID = null;
 
     protected PacketReader(final TCPConnection connection) {
         this.connection = connection;
@@ -284,7 +285,7 @@ class PacketReader {
                     }
                 }
                 eventType = parser.next();
-            } while (!done && eventType != XmlPullParser.END_DOCUMENT && thread == readerThread);
+            } while (!isPacketReadFinished(thread, eventType));
         }
         catch (Exception e) {
             // The exception can be ignored if the the connection is 'done'
@@ -297,6 +298,9 @@ class PacketReader {
         }
     }
 
+    protected boolean isPacketReadFinished(Thread thread, int eventType) {
+        return (done && eventType == XmlPullParser.END_DOCUMENT && thread == readerThread);
+    }
     /**
      * Releases the connection ID lock so that the thread that was waiting can resume. The
      * lock will be released when one of the following three conditions is met:<p>
@@ -306,7 +310,7 @@ class PacketReader {
      * 3) TLS negotiation was successful
      *
      */
-    synchronized private void releaseConnectionIDLock() {
+    synchronized protected void releaseConnectionIDLock() {
         notify();
     }
 
@@ -393,5 +397,9 @@ class PacketReader {
         {
             releaseConnectionIDLock();
         }
+    }
+
+    public boolean isDone() {
+        return done;
     }
 }

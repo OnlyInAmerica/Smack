@@ -16,12 +16,9 @@
  */
 package org.jivesoftware.smackx.disco;
 
+import org.jivesoftware.smack.*;
 import org.jivesoftware.smack.SmackException.NoResponseException;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
-import org.jivesoftware.smack.XMPPConnection;
-import org.jivesoftware.smack.ConnectionCreationListener;
-import org.jivesoftware.smack.Manager;
-import org.jivesoftware.smack.PacketListener;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
 import org.jivesoftware.smack.filter.PacketFilter;
 import org.jivesoftware.smack.filter.PacketTypeFilter;
@@ -104,7 +101,7 @@ public class ServiceDiscoveryManager extends Manager {
      * 
      * @param connection the connection to which a ServiceDiscoveryManager is going to be created.
      */
-    private ServiceDiscoveryManager(XMPPConnection connection) {
+    protected ServiceDiscoveryManager(XMPPConnection connection) {
         super(connection);
         // Register the new instance and associate it with the connection 
         instances.put(connection, this);
@@ -504,7 +501,7 @@ public class ServiceDiscoveryManager extends Manager {
      * @throws NoResponseException 
      * @throws NotConnectedException 
      */
-    public DiscoverInfo discoverInfo(String entityID) throws NoResponseException, XMPPErrorException, NotConnectedException {
+    public DiscoverInfo discoverInfo(String entityID) throws SmackException, XMPPErrorException, XMPPException {
         if (entityID == null)
             return discoverInfo(null, null);
 
@@ -549,7 +546,7 @@ public class ServiceDiscoveryManager extends Manager {
      * @throws NoResponseException if there was no response from the server.
      * @throws NotConnectedException 
      */
-    public DiscoverInfo discoverInfo(String entityID, String node) throws NoResponseException, XMPPErrorException, NotConnectedException {
+    public DiscoverInfo discoverInfo(String entityID, String node) throws SmackException, XMPPErrorException, XMPPException {
         // Discover the entity's info
         DiscoverInfo disco = new DiscoverInfo();
         disco.setType(IQ.Type.GET);
@@ -570,7 +567,7 @@ public class ServiceDiscoveryManager extends Manager {
      * @throws NoResponseException if there was no response from the server.
      * @throws NotConnectedException 
      */
-    public DiscoverItems discoverItems(String entityID) throws NoResponseException, XMPPErrorException, NotConnectedException  {
+    public DiscoverItems discoverItems(String entityID) throws SmackException, XMPPException {
         return discoverItems(entityID, null);
     }
 
@@ -586,7 +583,7 @@ public class ServiceDiscoveryManager extends Manager {
      * @throws NoResponseException if there was no response from the server.
      * @throws NotConnectedException 
      */
-    public DiscoverItems discoverItems(String entityID, String node) throws NoResponseException, XMPPErrorException, NotConnectedException {
+    public DiscoverItems discoverItems(String entityID, String node) throws SmackException, XMPPErrorException, XMPPException {
         // Discover the entity's items
         DiscoverItems disco = new DiscoverItems();
         disco.setType(IQ.Type.GET);
@@ -609,7 +606,7 @@ public class ServiceDiscoveryManager extends Manager {
      * @throws NoResponseException 
      * @throws NotConnectedException 
      */
-    public boolean canPublishItems(String entityID) throws NoResponseException, XMPPErrorException, NotConnectedException {
+    public boolean canPublishItems(String entityID) throws SmackException, XMPPErrorException, XMPPException {
         DiscoverInfo info = discoverInfo(entityID);
         return canPublishItems(info);
      }
@@ -639,7 +636,7 @@ public class ServiceDiscoveryManager extends Manager {
      * @throws NoResponseException 
      * @throws NotConnectedException 
      */
-    public void publishItems(String entityID, DiscoverItems discoverItems) throws NoResponseException, XMPPErrorException, NotConnectedException {
+    public void publishItems(String entityID, DiscoverItems discoverItems) throws SmackException, XMPPException {
         publishItems(entityID, null, discoverItems);
     }
 
@@ -656,8 +653,7 @@ public class ServiceDiscoveryManager extends Manager {
      * @throws NoResponseException if there was no response from the server.
      * @throws NotConnectedException 
      */
-    public void publishItems(String entityID, String node, DiscoverItems discoverItems) throws NoResponseException, XMPPErrorException, NotConnectedException
-            {
+    public void publishItems(String entityID, String node, DiscoverItems discoverItems) throws SmackException, XMPPException {
         discoverItems.setType(IQ.Type.SET);
         discoverItems.setTo(entityID);
         discoverItems.setNode(node);
@@ -675,7 +671,7 @@ public class ServiceDiscoveryManager extends Manager {
      * @throws NoResponseException 
      * @throws NotConnectedException 
      */
-    public boolean supportsFeature(String jid, String feature) throws NoResponseException, XMPPErrorException, NotConnectedException {
+    public boolean supportsFeature(String jid, String feature) throws SmackException, XMPPException {
         DiscoverInfo result = discoverInfo(jid);
         return result.containsFeature(feature);
     }

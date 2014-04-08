@@ -16,6 +16,16 @@
  */
 package org.jivesoftware.smack;
 
+import org.jivesoftware.smack.SmackException.ConnectionException;
+import org.jivesoftware.smack.SmackException.NotConnectedException;
+import org.jivesoftware.smack.compression.XMPPInputOutputStream;
+import org.jivesoftware.smack.debugger.SmackDebugger;
+import org.jivesoftware.smack.filter.IQReplyFilter;
+import org.jivesoftware.smack.filter.PacketFilter;
+import org.jivesoftware.smack.packet.IQ;
+import org.jivesoftware.smack.packet.Packet;
+import org.jivesoftware.smack.packet.Presence;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
@@ -40,16 +50,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.security.sasl.SaslException;
-
-import org.jivesoftware.smack.SmackException.NotConnectedException;
-import org.jivesoftware.smack.SmackException.ConnectionException;
-import org.jivesoftware.smack.compression.XMPPInputOutputStream;
-import org.jivesoftware.smack.debugger.SmackDebugger;
-import org.jivesoftware.smack.filter.IQReplyFilter;
-import org.jivesoftware.smack.filter.PacketFilter;
-import org.jivesoftware.smack.packet.IQ;
-import org.jivesoftware.smack.packet.Packet;
-import org.jivesoftware.smack.packet.Presence;
 
 /**
  * The abstract XMPPConnection class provides an interface for connections to a
@@ -942,7 +942,7 @@ public abstract class XMPPConnection {
      *
      * @param packet the packet to process.
      */
-    protected void processPacket(Packet packet) {
+    public void processPacket(Packet packet) {
         if (packet == null) {
             return;
         }
