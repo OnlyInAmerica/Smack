@@ -17,3 +17,7 @@ experimental/bin
 extensions/bin
 
 target/
+
+# IntelliJ
+.idea
+*.iml
