@@ -17,7 +17,7 @@
 package org.jivesoftware.smackx.serverless;
 
 
-import org.jivesoftware.smack.XMPPException;
+import org.jivesoftware.smack.*;
 import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.Message;
@@ -28,6 +28,7 @@ import org.jivesoftware.smack.filter.PacketIDFilter;
 import org.jivesoftware.smack.filter.PacketTypeFilter;
 import org.jivesoftware.smack.filter.MessageTypeFilter;
 import org.jivesoftware.smack.filter.IQTypeFilter;
+import org.jivesoftware.smack.packet.XMPPError;
 
 
 import java.net.ServerSocket;
@@ -69,7 +70,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Jonas Ådahl
  */
 public abstract class LLService {
-    private LLService service = null;
+    private static LLService service = null;
 
     // Listeners for new services
     private static Set<LLServiceListener> serviceCreatedListeners =
@@ -228,7 +229,7 @@ public abstract class LLService {
      * @return the active LLService instance.
      * @throws XMPPException if the LLService hasn't been instantiated.
      */
-    /*public static LLService getServiceInstance() throws XMPPException {
+    /*public synchronized static LLService getServiceInstance() throws XMPPException {
         if (service == null)
             throw new XMPPException("Link-local service not initiated.");
         return service;
@@ -287,7 +288,7 @@ public abstract class LLService {
         initiated = true;
     }
 
-    public void close() {
+    public void close() throws IOException {
         done = true;
 
         // close incoming connections
@@ -345,11 +346,13 @@ public abstract class LLService {
             catch (SocketException se) {
                 // If we are closing down, it's probably closed socket exception.
                 if (!done) {
-                    throw new XMPPException("Link-local service unexpectedly closed down.", se);
+                    throw new XMPPException.XMPPErrorException("Link-local service unexpectedly closed down.",
+                            new XMPPError(XMPPError.Condition.undefined_condition), se);
                 }
             }
             catch (IOException ioe) {
-                throw new XMPPException("Link-local service unexpectedly closed down.", ioe);
+                throw new XMPPException.XMPPErrorException("Link-local service unexpectedly closed down.",
+                        new XMPPError(XMPPError.Condition.undefined_condition), ioe);
             }
         }
     }
@@ -372,7 +375,8 @@ public abstract class LLService {
                 // failed to bind, try next
             }
         }
-        throw new XMPPException("Unable to bind port, no ports available.");
+        throw new XMPPException.XMPPErrorException("Unable to bind port, no ports available.",
+                new XMPPError(XMPPError.Condition.resource_constraint));
     }
 
     protected void unknownOriginMessage(Message message) {
@@ -651,8 +655,8 @@ public abstract class LLService {
         if (chat == null) {
             LLPresence presence = getPresenceByServiceName(serviceName);
             if (presence == null)
-                throw new XMPPException("Can't initiate new chat to '" +
-                        serviceName + "': mDNS presence unknown.");
+                throw new XMPPException.XMPPErrorException("Can't initiate new chat to '" +
+                        serviceName + "': mDNS presence unknown.", new XMPPError(XMPPError.Condition.undefined_condition));
             chat = new LLChat(this, presence);
             newLLChat(chat);
         }
@@ -666,7 +670,7 @@ public abstract class LLService {
      * @param serviceName Service name of the remote client.
      * @return A connection to the given service name.
      */
-    public XMPPLLConnection getConnection(String serviceName) throws XMPPException {
+    public XMPPLLConnection getConnection(String serviceName) throws XMPPException, IOException, SmackException {
         // If a connection exists, return it.
         XMPPLLConnection connection = getConnectionTo(serviceName);
         if (connection != null)
@@ -676,7 +680,8 @@ public abstract class LLService {
         LLPresence remotePresence = getPresenceByServiceName(serviceName);
 
         if (remotePresence == null) {
-            throw new XMPPException("Can't initiate connection, remote peer is not available.");
+            throw new XMPPException.XMPPErrorException("Can't initiate connection, remote peer is not available.",
+                    new XMPPError(XMPPError.Condition.recipient_unavailable));
         }
 
         LLConnectionConfiguration config =
@@ -696,7 +701,7 @@ public abstract class LLService {
      * @param message the message to be sent.
      * @throws XMPPException if the message cannot be sent.
      */
-    void sendMessage(Message message) throws XMPPException {
+    void sendMessage(Message message) throws XMPPException, IOException, SmackException {
         sendPacket(message);
     }
 
@@ -707,7 +712,7 @@ public abstract class LLService {
      * @param packet the packet to be sent.
      * @throws XMPPException if the packet cannot be sent.
      */
-    public void sendPacket(Packet packet) throws XMPPException {
+    public void sendPacket(Packet packet) throws XMPPException, IOException, SmackException {
         getConnection(packet.getTo()).sendPacket(packet);
     }
 
@@ -733,7 +738,7 @@ public abstract class LLService {
      *      connection #2, the packet will still be collected.</li>
      * </ul>
      */
-    public IQ getIQResponse(IQ request) throws XMPPException {
+    public IQ getIQResponse(IQ request) throws XMPPException, IOException, SmackException {
         XMPPLLConnection connection = getConnection(request.getTo());
 
         // Create a packet collector to listen for a response.
@@ -754,7 +759,8 @@ public abstract class LLService {
         // Stop queuing results
         collector.cancel();
         if (result == null) {
-            throw new XMPPException("No response from the remote host.");
+            throw new XMPPException.XMPPErrorException("No response from the remote host.",
+                    new XMPPError(XMPPError.Condition.undefined_condition));
         }
 
         return result;
@@ -865,7 +871,7 @@ public abstract class LLService {
             try {
                 connection.initListen();
             }
-            catch (XMPPException xe) {
+            catch (XMPPException | SmackException | IOException e) {
                 // ignore, since its an incoming connection
                 // there is nothing to save
             }
@@ -885,7 +891,7 @@ public abstract class LLService {
             this.packetFilter = packetFilter;
         }
        
-        public void notifyListener(Packet packet) {
+        public void notifyListener(Packet packet) throws SmackException.NotConnectedException {
             if (packetFilter == null || packetFilter.accept(packet)) {
                 packetListener.processPacket(packet);
             }
@@ -942,7 +948,7 @@ public abstract class LLService {
 
         /**
          * Returns the next available packet. The method call will block (not return)
-         * until a packet is available or the <tt>timeout</tt> has elapased. If the
+         * until a packet is available or the <tt>timeout</tt> has elapsed. If the
          * timeout elapses without a result, <tt>null</tt> will be returned.
          *
          * @param timeout the amount of time to wait for the next packet

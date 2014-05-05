@@ -17,6 +17,7 @@
 package org.jivesoftware.smackx.serverless;
 
 
+import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.packet.Message;
 
 import java.util.Set;
@@ -91,7 +92,7 @@ public class LLChat {
     /**
      * Send a message to the remote client.
      *
-     * @param message the message to be sent.
+     * @param text the message to be sent.
      * @throws XMPPException if an exception occurs during transmission.
      */
     public void sendMessage(String text) throws XMPPException {

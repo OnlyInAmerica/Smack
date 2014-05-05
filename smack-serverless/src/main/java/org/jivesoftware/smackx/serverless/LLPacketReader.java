@@ -21,6 +21,8 @@
 package org.jivesoftware.smackx.serverless;
 
 
+import org.jivesoftware.smack.PacketReader;
+import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.filter.PacketFilter;
 import org.jivesoftware.smack.packet.*;
 import org.jivesoftware.smack.provider.IQProvider;
@@ -47,7 +49,7 @@ public class LLPacketReader extends PacketReader {
     private XMPPLLConnection connection;
     private LLService service;
 
-    public LLPacketReader(final LLService service, final XMPPLLConnection connection) {
+    public LLPacketReader(final LLService service, final XMPPLLConnection connection) throws SmackException {
         super(connection);
         this.service = service;
         this.connection = connection;
@@ -66,7 +68,7 @@ public class LLPacketReader extends PacketReader {
                 connection.updateLastActivity();
                 if (eventType == XmlPullParser.START_TAG) {
                     if (parser.getName().equals("message")) {
-                        processPacket(PacketParserUtils.parseMessage(parser));
+                       connection.processPacket(PacketParserUtils.parseMessage(parser));
                     }
                     else if (parser.getName().equals("iq")) {
                         processPacket(parseIQ(parser));

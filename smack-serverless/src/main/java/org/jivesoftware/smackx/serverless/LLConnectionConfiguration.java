@@ -17,6 +17,11 @@
 package org.jivesoftware.smackx.serverless;
 
 
+import org.jivesoftware.smack.ConnectionConfiguration;
+import org.jivesoftware.smack.SmackConfiguration;
+import org.jivesoftware.smack.XMPPConnection;
+import org.jivesoftware.smack.proxy.ProxyInfo;
+
 import javax.net.SocketFactory;
 import java.net.Socket;
 
@@ -26,11 +31,12 @@ import java.net.Socket;
  * peer has connected to us.
  */
 public class LLConnectionConfiguration extends ConnectionConfiguration implements Cloneable {
+    private static final String SERVICE_NAME = "locallink";
     private LLPresence remotePresence;
     private LLPresence localPresence;
     private Socket socket;
 
-    private boolean debuggerEnabled = Connection.DEBUG_ENABLED;
+    private boolean debuggerEnabled = SmackConfiguration.DEBUG_ENABLED;
 
     // Holds the socket factory that is used to generate the socket in the connection
     private SocketFactory socketFactory;
@@ -41,6 +47,7 @@ public class LLConnectionConfiguration extends ConnectionConfiguration implement
      * @param remote LLPresence for the remote user
      */
     LLConnectionConfiguration(LLPresence local, LLPresence remote) {
+        super(remote.getServiceName());
         this.localPresence = local;
         this.remotePresence = remote;
     }
@@ -53,8 +60,16 @@ public class LLConnectionConfiguration extends ConnectionConfiguration implement
      * @param remoteSocket the socket which the new connection is assigned to.
      */
     LLConnectionConfiguration(LLPresence local, Socket remoteSocket) {
+        super(null);
         this.localPresence = local;
         this.socket = remoteSocket;
+    }
+
+    // Override ConnectionConfiguration#setServiceName to make it
+    // visible to the serverless package
+    @Override
+    protected void setServiceName(String serviceName) {
+        super.setServiceName(serviceName);
     }
 
     /**

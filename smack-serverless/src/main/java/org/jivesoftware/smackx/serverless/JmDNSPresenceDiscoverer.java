@@ -16,6 +16,9 @@
 
 package org.jivesoftware.smackx.serverless;
 
+import org.jivesoftware.smack.XMPPException;
+import org.jivesoftware.smack.packet.StreamError;
+import org.jivesoftware.smack.packet.XMPPError;
 import org.jivesoftware.smack.util.Tuple;
 
 import javax.jmdns.JmDNS;
@@ -40,7 +43,7 @@ class JmDNSPresenceDiscoverer extends LLPresenceDiscoverer {
     JmDNSPresenceDiscoverer() throws XMPPException {
         jmdns = JmDNSService.jmdns;
         if (jmdns == null)
-            throw new XMPPException("Failed to fully initiate mDNS daemon.");
+            throw new XMPPException.XMPPErrorException(new XMPPError(XMPPError.Condition.undefined_condition, "Failed to fully initiate mDNS daemon."));
 
         jmdns.addServiceListener(JmDNSService.SERVICE_TYPE, new PresenceServiceListener());
     }

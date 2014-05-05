@@ -17,6 +17,7 @@
 package org.jivesoftware.smackx.serverless;
 
 
+import org.jivesoftware.smack.*;
 import org.jivesoftware.smack.debugger.SmackDebugger;
 import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.packet.XMPPError;
@@ -35,7 +36,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
  * created by LLService and closed by inactivity.
  *
  */
-public class XMPPLLConnection extends XMPPConnection // public for debugging reasons
+public class XMPPLLConnection extends XMPPTCPConnection // public for debugging reasons
 {
     private final static Set<LLConnectionListener> linkLocalListeners =
             new CopyOnWriteArraySet<LLConnectionListener>();
@@ -84,18 +85,16 @@ public class XMPPLLConnection extends XMPPConnection // public for debugging rea
         timeoutThread.setName("Smack Link-local Connection Timeout (" + connection.connectionCounterValue + ")");
         timeoutThread.setDaemon(true);
 
-
+        // Move to LLConnectionConfiguration#init
         if (config.isInitiator()) {
             // we are connecting to remote host
             localPresence = config.getLocalPresence();
             remotePresence = config.getRemotePresence();
-            config.setServiceName(remotePresence.getServiceName());
             initiator = true;
         } else {
             // a remote host connected to us
             localPresence = config.getLocalPresence();
             remotePresence = null;
-            config.setServiceName(null);
             initiator = false;
             socket = config.getSocket();
         }
@@ -126,7 +125,10 @@ public class XMPPLLConnection extends XMPPConnection // public for debugging rea
      * @param serviceName the name of the service
      */
     public void setServiceName(String serviceName) {
-        config.setServiceName(remotePresence.getServiceName());
+        ((LLConnectionConfiguration)config).setServiceName(remotePresence.getServiceName());
+        LLConnectionConfiguration llconfig = new LLConnectionConfiguration(localPresence, remotePresence);
+        llconfig.setServiceName("Test");
+
     }
 
 
@@ -143,7 +145,7 @@ public class XMPPLLConnection extends XMPPConnection // public for debugging rea
     /**
      * Start listen for data and a stream tag.
      */
-    void initListen() throws XMPPException {
+    void initListen() throws XMPPException, IOException, SmackException {
         initConnection();
     }
 
@@ -170,7 +172,7 @@ public class XMPPLLConnection extends XMPPConnection // public for debugging rea
     /**
      * Create a socket, connect to the remote peer and initiate a XMPP stream session.
      */
-    public void connect() throws XMPPException {
+    public void connect() throws XMPPException, IOException, SmackException {
         String host = remotePresence.getHost();
         int port = remotePresence.getPort();
 
@@ -179,14 +181,14 @@ public class XMPPLLConnection extends XMPPConnection // public for debugging rea
         }
         catch (UnknownHostException uhe) {
             String errorMessage = "Could not connect to " + host + ":" + port + ".";
-            throw new XMPPException(errorMessage, new XMPPError(
+            throw new XMPPException.XMPPErrorException(errorMessage, new XMPPError(
                     XMPPError.Condition.remote_server_timeout, errorMessage),
                     uhe);
         }
         catch (IOException ioe) {
             String errorMessage = "Error connecting to " + host + ":"
                     + port + ".";
-            throw new XMPPException(errorMessage, new XMPPError(
+            throw new XMPPException.XMPPErrorException(errorMessage, new XMPPError(
                     XMPPError.Condition.remote_server_error, errorMessage), ioe);
         }
         initConnection();
@@ -237,7 +239,7 @@ public class XMPPLLConnection extends XMPPConnection // public for debugging rea
      * @param packet the packet to send
      */
     @Override
-    public void sendPacket(Packet packet) {
+    public void sendPacket(Packet packet) throws SmackException.NotConnectedException {
         updateLastActivity();
         // always add the from='' attribute
         packet.setFrom(getUser());
@@ -250,12 +252,11 @@ public class XMPPLLConnection extends XMPPConnection // public for debugging rea
      *
      * @throws XMPPException if establishing a connection to the server fails.
      */
-    private void initConnection() throws XMPPException {
-        // Set the reader and writer instance variables
-        initReaderAndWriter();
-        timeoutThread.start();
-
+    private void initConnection() throws XMPPException, IOException, SmackException {
         try {
+            // Set the reader and writer instance variables
+            initReaderAndWriter();
+            timeoutThread.start();
             // Don't initialize packet writer until we know it's a valid connection
             // unless we are the initiator. If we are NOT the initializer, we instead
             // wait for a stream initiation before doing anything.
@@ -284,50 +285,54 @@ public class XMPPLLConnection extends XMPPConnection // public for debugging rea
             // get an opening stream packet back from server.
             packetReader.startup();
         }
-        catch (XMPPException ex) {
+        catch (XMPPException.XMPPErrorException | IOException | SmackException ex) {
             // An exception occurred in setting up the connection. Make sure we shut down the
             // readers and writers and close the socket.
 
-            if (packetWriter != null) {
-                try {
-                    packetWriter.shutdown();
-                }
-                catch (Throwable ignore) { /* ignore */ }
-                packetWriter = null;
-            }
-            if (packetReader != null) {
-                try {
-                    packetReader.shutdown();
-                }
-                catch (Throwable ignore) { /* ignore */ }
-                packetReader = null;
-            }
-            if (socket != null) {
-                try {
-                    socket.close();
-                }
-                catch (Exception e) { /* ignore */ }
-                socket = null;
-            }
-            // closing reader after socket since reader.close() blocks otherwise
-            if (reader != null) {
-                try {
-                    reader.close();
-                }
-                catch (Throwable ignore) { /* ignore */ }
-                reader = null;
-            }
-            if (writer != null) {
-                try {
-                    writer.close();
-                }
-                catch (Throwable ignore) {  /* ignore */ }
-                writer = null;
-            }
-            connected = false;
+            shutdownPacketReadersAndWritersAndCloseSocket();
 
-            throw ex;        // Everything stoppped. Now throw the exception.
+            throw ex;        // Everything stopped. Now throw the exception.
         }
+    }
+
+    private void shutdownPacketReadersAndWritersAndCloseSocket() {
+        if (packetWriter != null) {
+            try {
+                packetWriter.shutdown();
+            }
+            catch (Throwable ignore) { /* ignore */ }
+            packetWriter = null;
+        }
+        if (packetReader != null) {
+            try {
+                packetReader.shutdown();
+            }
+            catch (Throwable ignore) { /* ignore */ }
+            packetReader = null;
+        }
+        if (socket != null) {
+            try {
+                socket.close();
+            }
+            catch (Exception e) { /* ignore */ }
+            socket = null;
+        }
+        // closing reader after socket since reader.close() blocks otherwise
+        if (reader != null) {
+            try {
+                reader.close();
+            }
+            catch (Throwable ignore) { /* ignore */ }
+            reader = null;
+        }
+        if (writer != null) {
+            try {
+                writer.close();
+            }
+            catch (Throwable ignore) {  /* ignore */ }
+            writer = null;
+        }
+        connected = false;
     }
 
     private void initReaderAndWriter() throws XMPPException {
@@ -338,7 +343,7 @@ public class XMPPLLConnection extends XMPPConnection // public for debugging rea
                     new OutputStreamWriter(socket.getOutputStream(), "UTF-8"));
         }
         catch (IOException ioe) {
-            throw new XMPPException(
+            throw new XMPPException.XMPPErrorException(
                     "XMPPError establishing connection with server.",
                     new XMPPError(XMPPError.Condition.remote_server_error,
                             "XMPPError establishing connection with server."),
@@ -393,7 +398,7 @@ public class XMPPLLConnection extends XMPPConnection // public for debugging rea
                 }
                 catch (Exception e) {
                     e.printStackTrace();
-                    DEBUG_ENABLED = false;
+                    SmackConfiguration.DEBUG_ENABLED = false;
                 }
             }
             else {
@@ -452,9 +457,7 @@ public class XMPPLLConnection extends XMPPConnection // public for debugging rea
 
         shutdown();
 
-        packetWriter.cleanup();
         packetWriter = null;
-        packetReader.cleanup();
         packetReader = null;
     }
 }

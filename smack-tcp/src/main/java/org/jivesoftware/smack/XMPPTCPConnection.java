@@ -72,11 +72,11 @@ public class XMPPTCPConnection extends XMPPConnection {
     /**
      * The socket which is used for this connection.
      */
-    Socket socket;
+    protected Socket socket;
 
     String connectionID = null;
     private String user = null;
-    private boolean connected = false;
+    protected boolean connected = false;
     // socketClosed is used concurrent
     // by XMPPTCPConnection, PacketReader, PacketWriter
     private volatile boolean socketClosed = false;
@@ -95,8 +95,8 @@ public class XMPPTCPConnection extends XMPPConnection {
 
     private ParsingExceptionCallback parsingExceptionCallback = SmackConfiguration.getDefaultParsingExceptionCallback();
 
-    PacketWriter packetWriter;
-    PacketReader packetReader;
+    protected PacketWriter packetWriter;
+    protected PacketReader packetReader;
 
     /**
      * Collection of available stream compression methods offered by the server.

@@ -193,7 +193,7 @@ public class ConnectionConfiguration implements Cloneable {
      *
      * @param serviceName the XMPP domain of the target server.
      */
-    void setServiceName(String serviceName) {
+    protected void setServiceName(String serviceName) {
         this.serviceName = serviceName;
     }
 

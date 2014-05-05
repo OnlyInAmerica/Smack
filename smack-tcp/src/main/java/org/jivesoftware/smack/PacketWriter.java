@@ -36,7 +36,7 @@ import java.util.logging.Logger;
  *
  * @author Matt Tucker
  */
-class PacketWriter {
+public class PacketWriter {
     private static final Logger LOGGER = Logger.getLogger(PacketWriter.class.getName());
     
     private Thread writerThread;
@@ -50,7 +50,7 @@ class PacketWriter {
      *
      * @param connection the connection.
      */
-    protected PacketWriter(XMPPTCPConnection connection) {
+    public PacketWriter(XMPPTCPConnection connection) {
         this.queue = new ArrayBlockingQueue<Packet>(500, true);
         this.connection = connection;
         init();

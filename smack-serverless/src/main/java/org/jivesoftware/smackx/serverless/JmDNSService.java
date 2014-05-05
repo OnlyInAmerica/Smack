@@ -17,10 +17,11 @@
 package org.jivesoftware.smackx.serverless;
 
 
+import org.jivesoftware.smack.XMPPException;
+import org.jivesoftware.smack.packet.XMPPError;
 import org.jivesoftware.smack.util.Tuple;
 
-import javax.jmdns.JmDNS;
-import javax.jmdns.ServiceInfo;
+import javax.jmdns.*;
 import javax.jmdns.ServiceNameListener;
 import javax.jmdns.impl.JmDNSImpl;
 import javax.jmdns.impl.DNSCache;
@@ -36,7 +37,7 @@ import java.util.Hashtable;
  *
  * @author Jonas Ådahl
  */
-public class JmDNSService extends LLService implements ServiceNameListener {
+public class JmDNSService extends LLService implements ServiceListener {
     static JmDNS jmdns = null;
     static JmDNSPresenceDiscoverer presenceDiscoverer = null;
     private ServiceInfo serviceInfo;
@@ -75,7 +76,7 @@ public class JmDNSService extends LLService implements ServiceNameListener {
     }
 
     @Override
-    public void close() {
+    public void close() throws IOException {
         super.close();
         jmdns.close();
     }
@@ -95,7 +96,7 @@ public class JmDNSService extends LLService implements ServiceNameListener {
             }
         }
         catch (IOException ioe) {
-            throw new XMPPException(ioe);
+            throw new XMPPException.(ioe);
         }
     }
 
@@ -153,7 +154,7 @@ public class JmDNSService extends LLService implements ServiceNameListener {
             }
         }
         catch (IOException ioe) {
-            throw new XMPPException(ioe);
+            throw new XMPPException.XMPPErrorException("Failed to register DNS-SD Service", new XMPPError(XMPPError.Condition.undefined_condition), ioe);
         }
     }
 
@@ -162,10 +163,13 @@ public class JmDNSService extends LLService implements ServiceNameListener {
      */
     protected void reannounceService() throws XMPPException {
         try {
-            jmdns.reannounceService(serviceInfo);
+            jmdns.registerService(serviceInfo);
+            // TODO: Ensure registerService is an acceptable replacement
+            // for original statement below:
+            //jmdns.reannounceService(serviceInfo);
         }
         catch (IOException ioe) {
-            throw new XMPPException("Exception occured when reannouncing mDNS presence.", ioe);
+            throw new XMPPException.XMPPErrorException("Exception occured when reannouncing mDNS presence.", new XMPPError(XMPPError.Condition.undefined_condition), ioe);
         }
     }
 
