@@ -45,12 +45,12 @@ import org.xmlpull.v1.XmlPullParserException;
  * @see XMPPConnection#addPacketListener
  * @author Matt Tucker
  */
-class PacketReader {
+public class PacketReader {
 
     private Thread readerThread;
 
     private XMPPTCPConnection connection;
-    private XmlPullParser parser;
+    protected XmlPullParser parser;
 
     /**
      * Set to true if the last features stanza from the server has been parsed. A XMPP connection

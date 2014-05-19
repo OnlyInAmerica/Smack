@@ -18,7 +18,8 @@ extensions/bin
 
 target/
 
-# Intellij
+# IntelliJ
+.idea
 *.iml
 
 # Mac OS X
