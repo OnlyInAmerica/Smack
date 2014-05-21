@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.jivesoftware.smackx;
+package org.jivesoftware.smackx.serverless;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -23,22 +23,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.jivesoftware.smack.Connection;
-import org.jivesoftware.smack.LLPresence;
-import org.jivesoftware.smack.LLPresenceListener;
-import org.jivesoftware.smack.LLService;
-import org.jivesoftware.smack.LLServiceConnectionListener;
-import org.jivesoftware.smack.LLServiceListener;
-import org.jivesoftware.smack.LLServiceStateListener;
+
+import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
-import org.jivesoftware.smack.XMPPLLConnection;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.Message;
-import org.jivesoftware.smackx.entitycaps.CapsVerListener;
-import org.jivesoftware.smackx.entitycaps.EntityCapsManager;
-import org.jivesoftware.smackx.packet.DataForm;
-import org.jivesoftware.smackx.packet.DiscoverInfo;
-import org.jivesoftware.smackx.packet.DiscoverItems;
+import org.jivesoftware.smackx.disco.NodeInformationProvider;
+import org.jivesoftware.smackx.disco.ServiceDiscoveryManager;
+import org.jivesoftware.smackx.caps.EntityCapsManager;
+import org.jivesoftware.smackx.xdata.packet.DataForm;
 
 /** 
  * LLServiceDiscoveryManager acts as a wrapper around ServiceDiscoveryManager
@@ -76,7 +69,7 @@ public class LLServiceDiscoveryManager extends ServiceDiscoveryManager {
 //        });
 //    }
 
-    private LLServiceDiscoveryManager(LLService llservice, Connection connection) {
+    protected LLServiceDiscoveryManager(LLService llservice, XMPPConnection connection) {
         super(connection);
         this.service = llservice;
 
@@ -163,40 +156,6 @@ public class LLServiceDiscoveryManager extends ServiceDiscoveryManager {
      */
     public static LLServiceDiscoveryManager getInstanceFor(LLService service) {
         return serviceManagers.get(service);
-    }
-
-    /**
-     * Returns the name of the client that will be returned when asked for the client identity
-     * in a disco request. The name could be any value you need to identity this client.
-     * 
-     * @return the name of the client that will be returned when asked for the client identity
-     *          in a disco request.
-     */
-    public static String getIdentityName() {
-        return ServiceDiscoveryManager.getIdentityName();
-    }
-
-    /**
-     * Sets the name of the client that will be returned when asked for the client identity
-     * in a disco request. The name could be any value you need to identity this client.
-     * 
-     * @param name the name of the client that will be returned when asked for the client identity
-     *          in a disco request.
-     */
-    public static void setIdentityName(String name) {
-        ServiceDiscoveryManager.setIdentityType(name);
-    }
-
-    /**
-     * Returns the type of client that will be returned when asked for the client identity in a 
-     * disco request. The valid types are defined by the category client. Follow this link to learn 
-     * the possible types: <a href="http://www.jabber.org/registrar/disco-categories.html#client">Jabber::Registrar</a>.
-     * 
-     * @return the type of client that will be returned when asked for the client identity in a 
-     *          disco request.
-     */
-    public static String getIdentityType() {
-        return ServiceDiscoveryManager.getIdentityType();
     }
 
     /**
@@ -593,8 +552,7 @@ public class LLServiceDiscoveryManager extends ServiceDiscoveryManager {
 
         public void connectionCreated(XMPPLLConnection connection) {
             // Add service discovery for Link-local connections.\
-            ServiceDiscoveryManager manager =
-                new ServiceDiscoveryManager(connection);
+            ServiceDiscoveryManager manager = ServiceDiscoveryManager.getInstanceFor(connection);
 
             // Set Entity Capabilities Manager
             manager.setEntityCapsManager(capsManager);
@@ -625,7 +583,7 @@ public class LLServiceDiscoveryManager extends ServiceDiscoveryManager {
                     presence.setHash(EntityCapsManager.HASH_METHOD);
                     presence.setNode(capsManager.getNode());
                     presence.setVer(ver);
-                    service.updatePresence(presence);
+                    service.updateLocalPresence(presence);
                 }
                 catch (XMPPException xe) {
                     // ignore

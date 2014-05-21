@@ -22,12 +22,10 @@ import org.jivesoftware.smack.packet.XMPPError;
 import org.jivesoftware.smack.util.Tuple;
 
 import javax.jmdns.*;
-import javax.jmdns.ServiceNameListener;
 import javax.jmdns.impl.JmDNSImpl;
 import javax.jmdns.impl.DNSCache;
-import javax.jmdns.impl.DNSEntry;
 
-import java.util.LinkedList;
+import java.util.Iterator;
 import java.net.InetAddress;
 import java.io.IOException;
 import java.util.Hashtable;
@@ -39,7 +37,6 @@ import java.util.Hashtable;
  */
 public class JmDNSService extends LLService implements ServiceListener {
     static JmDNS jmdns = null;
-    static JmDNSPresenceDiscoverer presenceDiscoverer = null;
     private ServiceInfo serviceInfo;
     static final String SERVICE_TYPE = "_presence._tcp.local.";
 
@@ -96,7 +93,7 @@ public class JmDNSService extends LLService implements ServiceListener {
             }
         }
         catch (IOException ioe) {
-            throw new XMPPException.(ioe);
+            throw new XMPPException.XMPPErrorException("Failed to create a JmDNS instance", new XMPPError(XMPPError.Condition.undefined_condition), ioe);
         }
     }
 
@@ -124,8 +121,8 @@ public class JmDNSService extends LLService implements ServiceListener {
         }
         serviceInfo = ServiceInfo.create(SERVICE_TYPE,
                 presence.getServiceName(), presence.getPort(), 0, 0, ht);
-        serviceInfo.addServiceNameListener(this);
-
+//        serviceInfo.addServiceNameListener(this);
+        jmdns.addServiceListener(SERVICE_TYPE, this);
         try {
             String originalName = serviceInfo.getQualifiedName();
             jmdns.registerService(serviceInfo);
@@ -136,21 +133,26 @@ public class JmDNSService extends LLService implements ServiceListener {
                 // Name collision occured, lets remove confusing elements
                 // from cache in case something goes wrong
                 JmDNSImpl jmdnsimpl = (JmDNSImpl) jmdns;
-                DNSCache.CacheNode n = jmdnsimpl.getCache().find(originalName);
+//                DNSCache.CacheNode n = jmdnsimpl.getCache().find(originalName);
+//                LinkedList<DNSEntry> toRemove = new LinkedList<DNSEntry>();
+//                while (n != null) {
+//                    DNSEntry e = n.getValue();
+//                    if (e != null)
+//                        toRemove.add(e);
+//
+//                    n = n.next();
+//                }
+//
+//                // Remove the DNSEntry's one by one
+//                for (DNSEntry e : toRemove) {
+//                    jmdnsimpl.getCache().remove(e);
+//                }
 
-                LinkedList<DNSEntry> toRemove = new LinkedList<DNSEntry>();
-                while (n != null) {
-                    DNSEntry e = n.getValue();
-                    if (e != null)
-                        toRemove.add(e);
-
-                    n = n.next();
+                DNSCache cache = jmdnsimpl.getCache();
+                for (Iterator i = cache.getDNSEntryList(originalName).iterator(); i.hasNext(); ) {
+                    i.remove();
                 }
 
-                // Remove the DNSEntry's one by one
-                for (DNSEntry e : toRemove) {
-                    jmdnsimpl.getCache().remove(e);
-                }
             }
         }
         catch (IOException ioe) {
@@ -173,14 +175,14 @@ public class JmDNSService extends LLService implements ServiceListener {
         }
     }
 
-    public void serviceNameChanged(String newName, String oldName) {
-        try {
-            super.serviceNameChanged(newName, oldName);
-        }
-        catch (Throwable t) {
-            // ignore
-        }
-    }
+//    public void serviceNameChanged(String newName, String oldName) {
+//        try {
+//            super.serviceNameChanged(newName, oldName);
+//        }
+//        catch (Throwable t) {
+//            // ignore
+//        }
+//    }
 
     /**
      * Unregister the DNS-SD service, making the client unavailable.
@@ -196,4 +198,25 @@ public class JmDNSService extends LLService implements ServiceListener {
         super.spam();
         System.out.println("Service name: " + serviceInfo.getName());
     }
+
+    /** vv {@link javax.jmdns.ServiceListener} vv **/
+
+    @Override
+    public void serviceAdded(ServiceEvent event) {
+        if (!presence.getServiceName().equals(event.getName())) {
+            super.serviceNameChanged(event.getName(), presence.getServiceName());
+        }
+    }
+
+    @Override
+    public void serviceRemoved(ServiceEvent event) {
+
+    }
+
+    @Override
+    public void serviceResolved(ServiceEvent event) {
+
+    }
+
+    /** ^^ {@link javax.jmdns.ServiceListener} ^^ **/
 }

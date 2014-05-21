@@ -5,4 +5,5 @@ dependencies {
     compile 'javax.jmdns:jmdns:3.4.1'
     compile project(':smack-core')
     compile project(':smack-tcp')
+    compile project(':smack-extensions')
 }

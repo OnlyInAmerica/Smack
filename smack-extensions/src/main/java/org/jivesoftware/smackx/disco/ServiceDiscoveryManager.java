@@ -103,7 +103,7 @@ public class ServiceDiscoveryManager extends Manager {
      * 
      * @param connection the connection to which a ServiceDiscoveryManager is going to be created.
      */
-    private ServiceDiscoveryManager(XMPPConnection connection) {
+    protected ServiceDiscoveryManager(XMPPConnection connection) {
         super(connection);
         // Register the new instance and associate it with the connection 
         instances.put(connection, this);

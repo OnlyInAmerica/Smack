@@ -774,7 +774,7 @@ public abstract class LLService {
      * @param presence the new presence information
      * @throws XMPPException if an error occurs
      */
-    public void updatePresence(LLPresence presence) throws XMPPException {
+    public void updateLocalPresence(LLPresence presence) throws XMPPException {
         this.presence.update(presence);
 
         if (initiated) {

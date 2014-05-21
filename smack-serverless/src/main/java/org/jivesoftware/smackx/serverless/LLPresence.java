@@ -118,22 +118,22 @@ public class LLPresence {
     }
 
     public List<Tuple<String, String>> toList() {
-        LinkedList<Tuple<String, String>> list = new LinkedList<Tuple<String, String>>();
-        list.add(new Tuple<String,String>("txtvers", "1"));
-        list.add(new Tuple<String,String>("1st", firstName));
-        list.add(new Tuple<String,String>("last", lastName));
-        list.add(new Tuple<String,String>("email", email));
-        list.add(new Tuple<String,String>("jid", jid));
-        list.add(new Tuple<String,String>("nick", nick));
-        list.add(new Tuple<String,String>("status", status.toString()));
-        list.add(new Tuple<String,String>("msg", msg));
-        list.add(new Tuple<String,String>("hash", hash));
-        list.add(new Tuple<String,String>("node", node));
-        list.add(new Tuple<String,String>("ver", ver));
-        list.add(new Tuple<String,String>("port.p2ppj", new Integer(port).toString()));
+        LinkedList<Tuple<String, String>> list = new LinkedList<>();
+        list.add(new Tuple<>("txtvers", "1"));
+        list.add(new Tuple<>("1st", firstName));
+        list.add(new Tuple<>("last", lastName));
+        list.add(new Tuple<>("email", email));
+        list.add(new Tuple<>("jid", jid));
+        list.add(new Tuple<>("nick", nick));
+        list.add(new Tuple<>("status", status.toString()));
+        list.add(new Tuple<>("msg", msg));
+        list.add(new Tuple<>("hash", hash));
+        list.add(new Tuple<>("node", node));
+        list.add(new Tuple<>("ver", ver));
+        list.add(new Tuple<>("port.p2ppj", Integer.toString(port)));
 
         for (Map.Entry<String,String> e : rest.entrySet()) {
-            list.add(new Tuple<String,String>(e.getKey(), e.getValue()));
+            list.add(new Tuple<>(e.getKey(), e.getValue()));
         }
 
         return list;
