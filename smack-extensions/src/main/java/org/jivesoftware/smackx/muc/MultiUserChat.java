@@ -17,6 +17,7 @@
 
 package org.jivesoftware.smackx.muc;
 
+import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -184,7 +185,7 @@ public class MultiUserChat {
      * @throws NotConnectedException 
      */
     public static boolean isServiceEnabled(XMPPConnection connection, String user)
-                    throws NoResponseException, XMPPErrorException, NotConnectedException {
+            throws SmackException, XMPPException, IOException {
         return ServiceDiscoveryManager.getInstanceFor(connection).supportsFeature(user,
                         discoNamespace);
     }
@@ -218,7 +219,7 @@ public class MultiUserChat {
      * @throws NotConnectedException 
      */
     public static List<String> getJoinedRooms(XMPPConnection connection, String user)
-                    throws NoResponseException, XMPPErrorException, NotConnectedException {
+            throws SmackException, XMPPException, IOException {
         ArrayList<String> answer = new ArrayList<String>();
         // Send the disco packet to the user
         DiscoverItems result = ServiceDiscoveryManager.getInstanceFor(connection).discoverItems(
@@ -243,7 +244,7 @@ public class MultiUserChat {
      * @throws NotConnectedException 
      */
     public static RoomInfo getRoomInfo(XMPPConnection connection, String room)
-                    throws NoResponseException, XMPPErrorException, NotConnectedException {
+            throws SmackException, XMPPException, IOException {
         DiscoverInfo info = ServiceDiscoveryManager.getInstanceFor(connection).discoverInfo(room);
         return new RoomInfo(info);
     }
@@ -257,7 +258,7 @@ public class MultiUserChat {
      * @throws NoResponseException 
      * @throws NotConnectedException 
      */
-    public static Collection<String> getServiceNames(XMPPConnection connection) throws NoResponseException, XMPPErrorException, NotConnectedException  {
+    public static Collection<String> getServiceNames(XMPPConnection connection) throws SmackException, XMPPException, IOException {
         final List<String> answer = new ArrayList<String>();
         ServiceDiscoveryManager discoManager = ServiceDiscoveryManager.getInstanceFor(connection);
         DiscoverItems items = discoManager.discoverItems(connection.getServiceName());
@@ -283,7 +284,7 @@ public class MultiUserChat {
      * @throws NotConnectedException 
      */
     public static Collection<HostedRoom> getHostedRooms(XMPPConnection connection,
-                    String serviceName) throws NoResponseException, XMPPErrorException, NotConnectedException {
+                    String serviceName) throws SmackException, XMPPException, IOException {
         List<HostedRoom> answer = new ArrayList<HostedRoom>();
         ServiceDiscoveryManager discoManager = ServiceDiscoveryManager.getInstanceFor(connection);
         DiscoverItems items = discoManager.discoverItems(serviceName);
@@ -906,7 +907,7 @@ public class MultiUserChat {
                 return identity.getName();
             }
         }
-        catch (XMPPException e) {
+        catch (XMPPException | IOException e) {
             LOGGER.log(Level.SEVERE, "Error retrieving room nickname", e);
         }
         // If no Identity was found then the user does not have a reserved room nickname

@@ -16,6 +16,7 @@
  */
 package org.jivesoftware.smackx.search;
 
+import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.SmackException.NoResponseException;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.XMPPConnection;
@@ -26,6 +27,7 @@ import org.jivesoftware.smackx.disco.packet.DiscoverInfo;
 import org.jivesoftware.smackx.disco.packet.DiscoverItems;
 import org.jivesoftware.smackx.xdata.Form;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -100,7 +102,7 @@ public class UserSearchManager {
      * @throws NoResponseException 
      * @throws NotConnectedException 
      */
-    public Collection<String> getSearchServices() throws NoResponseException, XMPPErrorException, NotConnectedException  {
+    public Collection<String> getSearchServices() throws SmackException, XMPPException, IOException {
         final List<String> searchServices = new ArrayList<String>();
         ServiceDiscoveryManager discoManager = ServiceDiscoveryManager.getInstanceFor(con);
         DiscoverItems items = discoManager.discoverItems(con.getServiceName());

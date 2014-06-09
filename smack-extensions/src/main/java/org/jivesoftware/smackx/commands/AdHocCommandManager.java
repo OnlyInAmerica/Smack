@@ -37,6 +37,7 @@ import org.jivesoftware.smackx.disco.packet.DiscoverItems;
 import org.jivesoftware.smackx.disco.packet.DiscoverInfo.Identity;
 import org.jivesoftware.smackx.xdata.Form;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -265,7 +266,7 @@ public class AdHocCommandManager extends Manager {
      * @throws XMPPException if the operation failed for some reason.
      * @throws SmackException if there was no response from the server.
      */
-    public DiscoverItems discoverCommands(String jid) throws XMPPException, SmackException {
+    public DiscoverItems discoverCommands(String jid) throws XMPPException, SmackException, IOException {
         return serviceDiscoveryManager.discoverItems(jid, NAMESPACE);
     }
 
@@ -276,7 +277,7 @@ public class AdHocCommandManager extends Manager {
      * @throws XMPPException if the operation failed for some reason.
      * @throws SmackException if there was no response from the server.
      */
-    public void publishCommands(String jid) throws XMPPException, SmackException {
+    public void publishCommands(String jid) throws XMPPException, SmackException, IOException {
         // Collects the commands to publish as items
         DiscoverItems discoverItems = new DiscoverItems();
         Collection<AdHocCommandInfo> xCommandsList = getRegisteredCommands();

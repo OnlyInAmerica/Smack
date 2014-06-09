@@ -141,6 +141,107 @@ public class PacketReader {
     }
 
     /**
+     * Handles an XMPP Message stanza
+     *
+     * @param parser the parser aligned at the Message start tag
+     * @param callback a callback to be notified of parsing exceptions
+     * @return true if the packet is consumed completely and should not be checked for other data
+     *
+     * @throws Exception
+     */
+    protected boolean handleMessageTag(XmlPullParser parser, ParsingExceptionCallback callback) throws Exception {
+        Packet packet;
+        try {
+            packet = PacketParserUtils.parseMessage(parser);
+        } catch (Exception e) {
+            String content = PacketParserUtils.parseContentDepth(parser, parser.getDepth());
+            UnparsablePacket message = new UnparsablePacket(content, e);
+            if (callback != null) {
+                callback.handleUnparsablePacket(message);
+            }
+            return true;
+        }
+        connection.processPacket(packet);
+        return false;
+    }
+    /**
+     * Handles an XMPP IQ stanza
+     *
+     * @param parser the parser aligned at the IQ start tag
+     * @param callback a callback to be notified of parsing exceptions
+     * @return true if the packet is consumed completely and should not be checked for other data
+     *
+     * @throws Exception
+     */
+    protected boolean handleIQTag(XmlPullParser parser, ParsingExceptionCallback callback) throws Exception {
+        IQ iq;
+        try {
+            iq = PacketParserUtils.parseIQ(parser, connection);
+        } catch (Exception e) {
+            String content = PacketParserUtils.parseContentDepth(parser, parser.getDepth());
+            UnparsablePacket message = new UnparsablePacket(content, e);
+            if (callback != null) {
+                callback.handleUnparsablePacket(message);
+            }
+            return true;
+        }
+        connection.processPacket(iq);
+        return false;
+    }
+
+    /**
+     * Handles an XMPP Presence stanza
+     *
+     * @param parser the parser aligned at the Presence start tag
+     * @param callback a callback to be notified of parsing exceptions
+     * @return true if the packet is consumed completely and should not be checked for other data
+     *
+     * @throws Exception
+     */
+    protected boolean handlePresenceTag(XmlPullParser parser, ParsingExceptionCallback callback) throws Exception {
+        Presence presence;
+        try {
+            presence = PacketParserUtils.parsePresence(parser);
+        } catch (Exception e) {
+            String content = PacketParserUtils.parseContentDepth(parser, parser.getDepth());
+            UnparsablePacket message = new UnparsablePacket(content, e);
+            if (callback != null) {
+                callback.handleUnparsablePacket(message);
+            }
+            return true;
+        }
+        connection.processPacket(presence);
+        return false;
+    }
+
+    /**
+     * Handles an XMPP Stream stanza
+     *
+     * @param parser the parser aligned at the Stream start tag
+     * @param callback a callback to be notified of parsing exceptions
+     * @return true if the packet is consumed completely and should not be checked for other data
+     *
+     * @throws Exception
+     */
+    protected boolean handleStreamTag(XmlPullParser parser, ParsingExceptionCallback callback) throws Exception {
+        // Ensure the correct jabber:client namespace is being used.
+        if ("jabber:client".equals(parser.getNamespace(null))) {
+            // Get the connection id.
+            for (int i=0; i<parser.getAttributeCount(); i++) {
+                if (parser.getAttributeName(i).equals("id")) {
+                    // Save the connectionID
+                    connection.connectionID = parser.getAttributeValue(i);
+                }
+                else if (parser.getAttributeName(i).equals("from")) {
+                    // Use the server name that the server says that it is.
+                    connection.setServiceName(parser.getAttributeValue(i));
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
      * Parse top-level packets in order to process them further.
      *
      * @param thread the thread that is being used by the reader to parse incoming packets.
@@ -152,65 +253,19 @@ public class PacketReader {
                 if (eventType == XmlPullParser.START_TAG) {
                     int parserDepth = parser.getDepth();
                     ParsingExceptionCallback callback = connection.getParsingExceptionCallback();
-                    if (parser.getName().equals("message")) {
-                        Packet packet;
-                        try {
-                            packet = PacketParserUtils.parseMessage(parser);
-                        } catch (Exception e) {
-                            String content = PacketParserUtils.parseContentDepth(parser, parserDepth);
-                            UnparsablePacket message = new UnparsablePacket(content, e);
-                            if (callback != null) {
-                                callback.handleUnparsablePacket(message);
-                            }
-                            continue;
-                        }
-                        connection.processPacket(packet);
+                    if (parser.getName().equals("message") && handleMessageTag(parser, callback)) {
+                        continue;
                     }
-                    else if (parser.getName().equals("iq")) {
-                        IQ iq;
-                        try {
-                            iq = PacketParserUtils.parseIQ(parser, connection);
-                        } catch (Exception e) {
-                            String content = PacketParserUtils.parseContentDepth(parser, parserDepth);
-                            UnparsablePacket message = new UnparsablePacket(content, e);
-                            if (callback != null) {
-                                callback.handleUnparsablePacket(message);
-                            }
-                            continue;
-                        }
-                        connection.processPacket(iq);
+                    else if (parser.getName().equals("iq") && handleIQTag(parser, callback)) {
+                        continue;
                     }
-                    else if (parser.getName().equals("presence")) {
-                        Presence presence;
-                        try {
-                            presence = PacketParserUtils.parsePresence(parser);
-                        } catch (Exception e) {
-                            String content = PacketParserUtils.parseContentDepth(parser, parserDepth);
-                            UnparsablePacket message = new UnparsablePacket(content, e);
-                            if (callback != null) {
-                                callback.handleUnparsablePacket(message);
-                            }
-                            continue;
-                        }
-                        connection.processPacket(presence);
+                    else if (parser.getName().equals("presence") && handlePresenceTag(parser, callback)) {
+                        continue;
                     }
                     // We found an opening stream. Record information about it, then notify
                     // the connectionID lock so that the packet reader startup can finish.
-                    else if (parser.getName().equals("stream")) {
-                        // Ensure the correct jabber:client namespace is being used.
-                        if ("jabber:client".equals(parser.getNamespace(null))) {
-                            // Get the connection id.
-                            for (int i=0; i<parser.getAttributeCount(); i++) {
-                                if (parser.getAttributeName(i).equals("id")) {
-                                    // Save the connectionID
-                                    connection.connectionID = parser.getAttributeValue(i);
-                                }
-                                else if (parser.getAttributeName(i).equals("from")) {
-                                    // Use the server name that the server says that it is.
-                                    connection.setServiceName(parser.getAttributeValue(i));
-                                }
-                            }
-                        }
+                    else if (parser.getName().equals("stream") && handleStreamTag(parser, callback)) {
+                        continue;
                     }
                     else if (parser.getName().equals("error")) {
                         throw new StreamErrorException(PacketParserUtils.parseStreamError(parser));

@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package org.jivesoftware.smackx.serverless;
+package org.jivesoftware.smack.tcp;
 
 
 import org.jivesoftware.smack.*;
 import org.jivesoftware.smack.debugger.SmackDebugger;
 import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.packet.XMPPError;
-import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 
 import java.io.*;
 import java.net.Socket;

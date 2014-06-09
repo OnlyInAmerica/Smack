@@ -676,7 +676,7 @@ public class ServiceDiscoveryManager extends Manager {
      * @throws NoResponseException 
      * @throws NotConnectedException 
      */
-    public boolean supportsFeature(String jid, String feature) throws NoResponseException, XMPPException, NotConnectedException {
+    public boolean supportsFeature(String jid, String feature) throws SmackException, XMPPException, IOException {
         DiscoverInfo result = discoverInfo(jid);
         return result.containsFeature(feature);
     }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.jivesoftware.smackx.serverless;
+package org.jivesoftware.smack.tcp;
 
 
 import org.jivesoftware.smack.*;
@@ -39,7 +39,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Map;
-import java.util.LinkedList;
 import java.util.ArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ConcurrentHashMap;
@@ -754,7 +753,7 @@ public abstract class LLService {
 
         // Wait up to 5 seconds for a result.
         IQ result = (IQ) collector.nextResult(
-                SmackConfiguration.getPacketReplyTimeout());
+                SmackConfiguration.getDefaultPacketReplyTimeout());
 
         // Stop queuing results
         collector.cancel();
@@ -801,6 +800,12 @@ public abstract class LLService {
         ConnectionActivityListener(XMPPLLConnection connection) {
             this.connection = connection;
         }
+
+        @Override
+        public void connected(XMPPConnection connection) {}
+
+        @Override
+        public void authenticated(XMPPConnection connection) {}
 
         public void connectionClosed() {
             removeConnectionRecord();
@@ -941,7 +946,7 @@ public abstract class LLService {
             synchronized (connection) {
                 PacketCollector collector =
                     connection.createPacketCollector(packetFilter);
-                collector.setLock(lock);
+//                collector.setLock(lock);
                 collectors.add(collector);
             }
         }
@@ -976,6 +981,8 @@ public abstract class LLService {
                         break;
                     }
 
+                    // TODO: lock will never be notified now that it's not used
+                    // by PacketCollector. Ensure this behavior is ok
                     // wait
                     synchronized (lock) {
                         lock.wait(waitTime);

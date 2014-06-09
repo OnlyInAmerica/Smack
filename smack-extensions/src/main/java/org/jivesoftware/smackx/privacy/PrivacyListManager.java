@@ -16,6 +16,7 @@
  */
 package org.jivesoftware.smackx.privacy;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -23,12 +24,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 
+import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.SmackException.NoResponseException;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.ConnectionCreationListener;
 import org.jivesoftware.smack.Manager;
 import org.jivesoftware.smack.PacketListener;
+import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
 import org.jivesoftware.smack.filter.AndFilter;
 import org.jivesoftware.smack.filter.IQTypeFilter;
@@ -419,7 +422,7 @@ public class PrivacyListManager extends Manager {
      * @throws NoResponseException 
      * @throws NotConnectedException 
      */
-    public boolean isSupported() throws NoResponseException, XMPPErrorException, NotConnectedException{
+    public boolean isSupported() throws SmackException, XMPPException, IOException {
         return ServiceDiscoveryManager.getInstanceFor(connection()).supportsFeature(
                         connection().getServiceName(), NAMESPACE);
     }

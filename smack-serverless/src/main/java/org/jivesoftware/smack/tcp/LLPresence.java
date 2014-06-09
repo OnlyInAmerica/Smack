@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.jivesoftware.smackx.serverless;
+package org.jivesoftware.smack.tcp;
 
 
 import org.jivesoftware.smack.util.Tuple;

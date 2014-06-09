@@ -16,6 +16,7 @@
  */
 package org.jivesoftware.smackx.ping;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
@@ -202,7 +203,7 @@ public class PingManager extends Manager {
      * @throws NoResponseException if there was no response from the jid.
      * @throws NotConnectedException 
      */
-    public boolean isPingSupported(String jid) throws NoResponseException, XMPPErrorException, NotConnectedException  {
+    public boolean isPingSupported(String jid) throws SmackException, XMPPException, IOException {
         return ServiceDiscoveryManager.getInstanceFor(connection()).supportsFeature(jid, PingManager.NAMESPACE);
     }
 

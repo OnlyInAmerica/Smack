@@ -165,6 +165,7 @@ public class PacketParserUtils {
         return content.toString();
     }
 
+
     /**
      * Parses a presence packet.
      *
@@ -560,34 +561,34 @@ public class PacketParserUtils {
      */
     public static StreamError parseStreamError(XmlPullParser parser) throws IOException,
             XmlPullParserException {
-    final int depth = parser.getDepth();
-    boolean done = false;
-    String code = null;
-    String text = null;
-    while (!done) {
-        int eventType = parser.next();
+        final int depth = parser.getDepth();
+        boolean done = false;
+        String code = null;
+        String text = null;
+        while (!done) {
+            int eventType = parser.next();
 
-        if (eventType == XmlPullParser.START_TAG) {
-            String namespace = parser.getNamespace();
-            if (StreamError.NAMESPACE.equals(namespace)) {
-                String name = parser.getName();
-                if (name.equals("text") && !parser.isEmptyElementTag()) {
-                    parser.next();
-                    text = parser.getText();
-                }
-                else {
-                    // If it's not a text element, that is qualified by the StreamError.NAMESPACE,
-                    // then it has to be the stream error code
-                    code = name;
+            if (eventType == XmlPullParser.START_TAG) {
+                String namespace = parser.getNamespace();
+                if (StreamError.NAMESPACE.equals(namespace)) {
+                    String name = parser.getName();
+                    if (name.equals("text") && !parser.isEmptyElementTag()) {
+                        parser.next();
+                        text = parser.getText();
+                    }
+                    else {
+                        // If it's not a text element, that is qualified by the StreamError.NAMESPACE,
+                        // then it has to be the stream error code
+                        code = name;
+                    }
                 }
             }
+            else if (eventType == XmlPullParser.END_TAG && depth == parser.getDepth()) {
+                done = true;
+            }
         }
-        else if (eventType == XmlPullParser.END_TAG && depth == parser.getDepth()) {
-            done = true;
-        }
+        return new StreamError(code, text);
     }
-    return new StreamError(code, text);
-}
 
     /**
      * Parses error sub-packets.

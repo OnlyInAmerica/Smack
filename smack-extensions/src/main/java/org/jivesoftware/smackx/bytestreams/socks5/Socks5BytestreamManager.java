@@ -538,7 +538,7 @@ public final class Socks5BytestreamManager implements BytestreamManager {
      * @throws NoResponseException 
      * @throws NotConnectedException 
      */
-    private boolean supportsSocks5(String targetJID) throws NoResponseException, XMPPErrorException, NotConnectedException {
+    private boolean supportsSocks5(String targetJID) throws SmackException, XMPPException, IOException {
         return ServiceDiscoveryManager.getInstanceFor(connection).supportsFeature(targetJID, NAMESPACE);
     }
 
@@ -551,7 +551,7 @@ public final class Socks5BytestreamManager implements BytestreamManager {
      * @throws NoResponseException if there was no response from the server.
      * @throws NotConnectedException 
      */
-    private List<String> determineProxies() throws NoResponseException, XMPPErrorException, NotConnectedException {
+    private List<String> determineProxies() throws SmackException, XMPPException, IOException {
         ServiceDiscoveryManager serviceDiscoveryManager = ServiceDiscoveryManager.getInstanceFor(this.connection);
 
         List<String> proxies = new ArrayList<String>();

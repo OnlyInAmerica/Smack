@@ -17,6 +17,7 @@
 package org.jivesoftware.smackx.caps;
 
 import org.jivesoftware.smack.AbstractConnectionListener;
+import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.SmackException.NoResponseException;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.XMPPConnection;
@@ -441,7 +442,7 @@ public class EntityCapsManager extends Manager {
      * @throws NoResponseException 
      * @throws NotConnectedException 
      */
-    public boolean areEntityCapsSupported(String jid) throws NoResponseException, XMPPException, NotConnectedException {
+    public boolean areEntityCapsSupported(String jid) throws SmackException, XMPPException, IOException {
         return sdm.supportsFeature(jid, NAMESPACE);
     }
 
@@ -453,7 +454,7 @@ public class EntityCapsManager extends Manager {
      * @throws NoResponseException 
      * @throws NotConnectedException 
      */
-    public boolean areEntityCapsSupportedByServer() throws NoResponseException, XMPPException, NotConnectedException  {
+    public boolean areEntityCapsSupportedByServer() throws SmackException, XMPPException, IOException {
         return areEntityCapsSupported(connection().getServiceName());
     }
 

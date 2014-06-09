@@ -16,13 +16,16 @@
  */
 package org.jivesoftware.smackx.pubsub;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.SmackException.NoResponseException;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.XMPPConnection;
+import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
 import org.jivesoftware.smack.packet.IQ.Type;
 import org.jivesoftware.smack.packet.Packet;
@@ -277,8 +280,7 @@ final public class PubSubManager
 	 * @throws NoResponseException 
 	 * @throws NotConnectedException 
 	 */
-	public DiscoverInfo getSupportedFeatures() throws NoResponseException, XMPPErrorException, NotConnectedException
-	{
+	public DiscoverInfo getSupportedFeatures() throws SmackException, XMPPException, IOException {
 		ServiceDiscoveryManager mgr = ServiceDiscoveryManager.getInstanceFor(con);
 		return mgr.discoverInfo(to);
 	}

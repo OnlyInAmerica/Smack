@@ -14,20 +14,23 @@
  * limitations under the License.
  */
 
-package org.jivesoftware.smackx.serverless;
+package org.jivesoftware.smack.tcp;
 
-
-import org.jivesoftware.smack.packet.Message;
 
 /**
- * Notification when messages are being delivered to a chat.
+ * Interface for receiving notifications about presence changes.
  */
-public interface LLMessageListener {
+public interface LLPresenceListener {
     /**
-     * New message in chat.
-     *
-     * @param chat the chat session which the message was delivered to.
-     * @param message the message being delivered.
+     * New link-local presence has been discovered.
+     * 
+     * @param presence information about the new presence
      */
-    void processMessage(LLChat chat, Message message);
+
+    public void presenceNew(LLPresence presence);
+    /**
+     * A link-local presence has gone offline.
+     * @param presence the presence which went offline.
+     */
+    public void presenceRemove(LLPresence presence);
 }

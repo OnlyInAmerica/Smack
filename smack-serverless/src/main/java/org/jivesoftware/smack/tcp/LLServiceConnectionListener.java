@@ -14,18 +14,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jivesoftware.smackx.serverless;
+package org.jivesoftware.smack.tcp;
 
+
+import org.jivesoftware.smack.tcp.XMPPLLConnection;
 
 /**
- * Notification for new Link-local services created.
+ * Notification about when new Link-local connections associated with a
+ * specific Link-local service has been established.
  */
-public interface LLServiceListener {
+public interface LLServiceConnectionListener {
 
     /**
-     * The function called when a new Link-local service is created.
+     * A new link-local connection has been established.
      *
-     * @param service the new service
+     * @param connection the new established connection.
      */
-    public void serviceCreated(LLService service);
+    public void connectionCreated(XMPPLLConnection connection);
 }

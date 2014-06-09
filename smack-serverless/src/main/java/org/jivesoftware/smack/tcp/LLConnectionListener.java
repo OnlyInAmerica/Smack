@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package org.jivesoftware.smackx.serverless;
+package org.jivesoftware.smack.tcp;
 
+
+import org.jivesoftware.smack.tcp.XMPPLLConnection;
 
 /**
  * Notification about when new Link-local connections has been established.

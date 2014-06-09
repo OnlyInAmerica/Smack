@@ -16,13 +16,16 @@
  */
 package org.jivesoftware.smackx.amp;
 
+import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.SmackException.NoResponseException;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.XMPPConnection;
+import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
 import org.jivesoftware.smack.util.XmppDateTime;
 import org.jivesoftware.smackx.amp.packet.AMPExtension;
 
+import java.io.IOException;
 import java.util.Date;
 
 
@@ -38,7 +41,7 @@ public class AMPExpireAtCondition implements AMPExtension.Condition {
      * @throws NoResponseException 
      * @throws NotConnectedException 
      */
-    public static boolean isSupported(XMPPConnection connection) throws NoResponseException, XMPPErrorException, NotConnectedException  {
+    public static boolean isSupported(XMPPConnection connection) throws SmackException, XMPPException, IOException {
         return AMPManager.isConditionSupported(connection, NAME);
     }
 

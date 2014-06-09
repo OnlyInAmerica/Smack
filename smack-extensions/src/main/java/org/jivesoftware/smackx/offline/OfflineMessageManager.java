@@ -18,9 +18,11 @@
 package org.jivesoftware.smackx.offline;
 
 import org.jivesoftware.smack.PacketCollector;
+import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.SmackException.NoResponseException;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.XMPPConnection;
+import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
 import org.jivesoftware.smack.filter.AndFilter;
 import org.jivesoftware.smack.filter.PacketExtensionFilter;
@@ -35,6 +37,7 @@ import org.jivesoftware.smackx.offline.packet.OfflineMessageInfo;
 import org.jivesoftware.smackx.offline.packet.OfflineMessageRequest;
 import org.jivesoftware.smackx.xdata.Form;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -79,7 +82,7 @@ public class OfflineMessageManager {
      * @throws NoResponseException if there was no response from the server.
      * @throws NotConnectedException 
      */
-    public boolean supportsFlexibleRetrieval() throws NoResponseException, XMPPErrorException, NotConnectedException {
+    public boolean supportsFlexibleRetrieval() throws SmackException, XMPPException, IOException {
         return ServiceDiscoveryManager.getInstanceFor(connection).supportsFeature(connection.getServiceName(), namespace);
     }
 
@@ -92,7 +95,7 @@ public class OfflineMessageManager {
      * @throws NoResponseException if there was no response from the server.
      * @throws NotConnectedException 
      */
-    public int getMessageCount() throws NoResponseException, XMPPErrorException, NotConnectedException {
+    public int getMessageCount() throws SmackException, XMPPException, IOException {
         DiscoverInfo info = ServiceDiscoveryManager.getInstanceFor(connection).discoverInfo(null,
                 namespace);
         Form extendedInfo = Form.getFormFrom(info);
@@ -115,7 +118,7 @@ public class OfflineMessageManager {
      * @throws NoResponseException if there was no response from the server.
      * @throws NotConnectedException 
      */
-    public List<OfflineMessageHeader> getHeaders() throws NoResponseException, XMPPErrorException, NotConnectedException {
+    public List<OfflineMessageHeader> getHeaders() throws SmackException, XMPPException, IOException {
         List<OfflineMessageHeader> answer = new ArrayList<OfflineMessageHeader>();
         DiscoverItems items = ServiceDiscoveryManager.getInstanceFor(connection).discoverItems(
                 null, namespace);

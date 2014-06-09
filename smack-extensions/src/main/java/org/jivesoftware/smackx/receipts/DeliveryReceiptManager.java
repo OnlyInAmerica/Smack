@@ -16,6 +16,7 @@
  */
 package org.jivesoftware.smackx.receipts;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
@@ -93,7 +94,7 @@ public class DeliveryReceiptManager extends Manager implements PacketListener {
      * @throws SmackException if there was no response from the server.
      * @throws XMPPException 
      */
-    public boolean isSupported(String jid) throws SmackException, XMPPException {
+    public boolean isSupported(String jid) throws SmackException, XMPPException, IOException {
         return ServiceDiscoveryManager.getInstanceFor(connection()).supportsFeature(jid,
                         DeliveryReceipt.NAMESPACE);
     }

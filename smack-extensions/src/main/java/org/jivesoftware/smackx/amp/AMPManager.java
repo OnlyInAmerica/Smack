@@ -16,14 +16,18 @@
  */
 package org.jivesoftware.smackx.amp;
 
+import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.SmackException.NoResponseException;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.ConnectionCreationListener;
+import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
 import org.jivesoftware.smackx.amp.packet.AMPExtension;
 import org.jivesoftware.smackx.disco.ServiceDiscoveryManager;
 import org.jivesoftware.smackx.disco.packet.DiscoverInfo;
+
+import java.io.IOException;
 
 /**
  * Manages AMP stanzas within messages. A AMPManager provides a high level access to
@@ -87,7 +91,7 @@ public class AMPManager {
      * @throws NoResponseException 
      * @throws NotConnectedException 
      */
-    public static boolean isActionSupported(XMPPConnection connection, AMPExtension.Action action) throws NoResponseException, XMPPErrorException, NotConnectedException {
+    public static boolean isActionSupported(XMPPConnection connection, AMPExtension.Action action) throws SmackException, XMPPException, IOException {
         String featureName = AMPExtension.NAMESPACE + "?action=" + action.toString();
         return isFeatureSupportedByServer(connection, featureName, AMPExtension.NAMESPACE);
     }
@@ -104,12 +108,12 @@ public class AMPManager {
      * @see AMPExpireAtCondition
      * @see AMPMatchResourceCondition
      */
-    public static boolean isConditionSupported(XMPPConnection connection, String conditionName) throws NoResponseException, XMPPErrorException, NotConnectedException {
+    public static boolean isConditionSupported(XMPPConnection connection, String conditionName) throws SmackException, XMPPException, IOException {
         String featureName = AMPExtension.NAMESPACE + "?condition=" + conditionName;
         return isFeatureSupportedByServer(connection, featureName, AMPExtension.NAMESPACE);
     }
 
-    private static boolean isFeatureSupportedByServer(XMPPConnection connection, String featureName, String node) throws NoResponseException, XMPPErrorException, NotConnectedException {
+    private static boolean isFeatureSupportedByServer(XMPPConnection connection, String featureName, String node) throws SmackException, XMPPException, IOException {
         ServiceDiscoveryManager discoveryManager = ServiceDiscoveryManager.getInstanceFor(connection);
         DiscoverInfo info = discoveryManager.discoverInfo(connection.getServiceName(), node);
         for (DiscoverInfo.Feature feature : info.getFeatures()){

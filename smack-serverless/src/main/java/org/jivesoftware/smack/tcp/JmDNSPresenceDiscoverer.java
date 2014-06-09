@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package org.jivesoftware.smackx.serverless;
+package org.jivesoftware.smack.tcp;
 
 import org.jivesoftware.smack.XMPPException;
-import org.jivesoftware.smack.packet.StreamError;
 import org.jivesoftware.smack.packet.XMPPError;
 import org.jivesoftware.smack.util.Tuple;
 
@@ -25,7 +24,6 @@ import javax.jmdns.JmDNS;
 import javax.jmdns.ServiceEvent;
 import javax.jmdns.ServiceListener;
 
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.LinkedList;
