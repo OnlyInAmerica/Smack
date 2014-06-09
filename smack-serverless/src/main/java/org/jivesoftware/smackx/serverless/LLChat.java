@@ -40,7 +40,7 @@ public class LLChat {
 
 
     LLChat(LLService service, LLPresence presence) throws XMPPException {
-        this.service = service;;
+        this.service = service;
         serviceName = presence.getServiceName();
     }
 

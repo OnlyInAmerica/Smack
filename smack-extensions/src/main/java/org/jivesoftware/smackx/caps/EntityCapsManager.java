@@ -24,6 +24,7 @@ import org.jivesoftware.smack.ConnectionCreationListener;
 import org.jivesoftware.smack.Manager;
 import org.jivesoftware.smack.PacketInterceptor;
 import org.jivesoftware.smack.PacketListener;
+import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.Packet;
@@ -48,6 +49,7 @@ import org.jivesoftware.smackx.xdata.Form;
 import org.jivesoftware.smackx.xdata.FormField;
 import org.jivesoftware.smackx.xdata.packet.DataForm;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -56,10 +58,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.io.IOException;
@@ -78,6 +82,7 @@ public class EntityCapsManager extends Manager {
     public static final String NAMESPACE = "http://jabber.org/protocol/caps";
     public static final String ELEMENT = "c";
 
+    public static final String DEFAULT_HASH = "sha-1";
     private static final Map<String, MessageDigest> SUPPORTED_HASHES = new HashMap<String, MessageDigest>();
     private static String DEFAULT_ENTITY_NODE = "http://www.igniterealtime.org/projects/smack";
 
@@ -107,6 +112,13 @@ public class EntityCapsManager extends Manager {
      */
     protected static Map<String, NodeVerHash> jidCaps = new Cache<String, NodeVerHash>(10000, -1);
 
+    /**
+     * Set of listeners to be notified when the local client's
+     * capabilities string is updated
+     */
+    private final static Set<CapsVerListener> capsVerListeners =
+            new CopyOnWriteArraySet<CapsVerListener>();
+
     static {
         XMPPConnection.addConnectionCreationListener(new ConnectionCreationListener() {
             public void connectionCreated(XMPPConnection connection) {
@@ -120,6 +132,22 @@ public class EntityCapsManager extends Manager {
         } catch (NoSuchAlgorithmException e) {
             // Ignore
         }
+    }
+
+    public interface CapsVerListener {
+        public void capsVerUpdated(String ver);
+    }
+
+    public static void addCapsVerListener(CapsVerListener capsVerListener) {
+        capsVerListeners.add(capsVerListener);
+    }
+
+    public static void removeCapsVerListener(CapsVerListener capsVerListener) {
+        capsVerListeners.remove(capsVerListener);
+    }
+
+    public static Collection<CapsVerListener> getCapsVerListeners() {
+        return Collections.unmodifiableCollection(capsVerListeners);
     }
 
     /**
@@ -316,7 +344,7 @@ public class EntityCapsManager extends Manager {
                 if (!entityCapsEnabled)
                     return;
 
-                CapsExtension caps = new CapsExtension(entityNode, getCapsVersion(), "sha-1");
+                CapsExtension caps = new CapsExtension(entityNode, getCapsVersion(), DEFAULT_HASH);
                 packet.addExtension(caps);
             }
         };
@@ -360,6 +388,10 @@ public class EntityCapsManager extends Manager {
         updateLocalEntityCaps();
     }
 
+    public String getEntityNode() {
+        return entityNode;
+    }
+
     /**
      * Remove a record telling what entity caps node a user has.
      * 
@@ -368,6 +400,15 @@ public class EntityCapsManager extends Manager {
      */
     public void removeUserCapsNode(String user) {
         jidCaps.remove(user);
+    }
+
+    /**
+     * Add a record describing what enetity caps node a user has.
+     *
+     * @param user the user (Full JID)
+     */
+    public void addUserCapsNode(String user, String node, String ver) {
+        jidCaps.put(user, new NodeVerHash(node, ver, DEFAULT_HASH));
     }
 
     /**
@@ -400,7 +441,7 @@ public class EntityCapsManager extends Manager {
      * @throws NoResponseException 
      * @throws NotConnectedException 
      */
-    public boolean areEntityCapsSupported(String jid) throws NoResponseException, XMPPErrorException, NotConnectedException {
+    public boolean areEntityCapsSupported(String jid) throws NoResponseException, XMPPException, NotConnectedException {
         return sdm.supportsFeature(jid, NAMESPACE);
     }
 
@@ -412,7 +453,7 @@ public class EntityCapsManager extends Manager {
      * @throws NoResponseException 
      * @throws NotConnectedException 
      */
-    public boolean areEntityCapsSupportedByServer() throws NoResponseException, XMPPErrorException, NotConnectedException  {
+    public boolean areEntityCapsSupportedByServer() throws NoResponseException, XMPPException, NotConnectedException  {
         return areEntityCapsSupported(connection().getServiceName());
     }
 
@@ -433,7 +474,7 @@ public class EntityCapsManager extends Manager {
             discoverInfo.setFrom(connection.getUser());
         sdm.addDiscoverInfoTo(discoverInfo);
 
-        currentCapsVersion = generateVerificationString(discoverInfo, "sha-1");
+        currentCapsVersion = generateVerificationString(discoverInfo, DEFAULT_HASH);
         addDiscoverInfoByNode(entityNode + '#' + currentCapsVersion, discoverInfo);
         if (lastLocalCapsVersions.size() > 10) {
             String oldCapsVersion = lastLocalCapsVersions.poll();
@@ -441,9 +482,10 @@ public class EntityCapsManager extends Manager {
         }
         lastLocalCapsVersions.add(currentCapsVersion);
 
+        // Keys in caps elsewhere are "node#ver", not the entire verification String?
         caps.put(currentCapsVersion, discoverInfo);
         if (connection != null)
-            jidCaps.put(connection.getUser(), new NodeVerHash(entityNode, currentCapsVersion, "sha-1"));
+            jidCaps.put(connection.getUser(), new NodeVerHash(entityNode, currentCapsVersion, DEFAULT_HASH));
 
         final List<Identity> identities = new LinkedList<Identity>(ServiceDiscoveryManager.getInstanceFor(connection).getIdentities());
         sdm.setNodeInformationProvider(entityNode + '#' + currentCapsVersion, new NodeInformationProvider() {
@@ -471,7 +513,7 @@ public class EntityCapsManager extends Manager {
             }
         });
 
-        // Send an empty presence, and let the packet intercepter
+        // Send an empty presence, and let the packet interceptor
         // add a <c/> node to it.
         // See http://xmpp.org/extensions/xep-0115.html#advertise
         // We only send a presence packet if there was already one send
@@ -484,6 +526,10 @@ public class EntityCapsManager extends Manager {
             catch (NotConnectedException e) {
                 LOGGER.log(Level.WARNING, "Could could not update presence with caps info", e);
             }
+        }
+
+        for (CapsVerListener listener : getCapsVerListeners()) {
+            listener.capsVerUpdated(currentCapsVersion);
         }
     }
 

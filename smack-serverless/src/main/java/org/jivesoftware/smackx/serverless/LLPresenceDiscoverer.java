@@ -30,7 +30,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 /**
  * Link-local presence discoverer. XEP-0174 describes how to use mDNS/DNS-SD.
  * This class in an abstract representation of the basic functionality of
- * handeling presences discovering.
+ * handling presences discovering.
  */
 public abstract class LLPresenceDiscoverer {
     // Listeners to be notified about changes.
@@ -99,7 +99,7 @@ public abstract class LLPresenceDiscoverer {
     }
 
     /** 
-     * Used by the class extending htis one to tell when a presence
+     * Used by the class extending this one to tell when a presence
      * goes offline.
      *
      * @param name service name of the presence going offline.

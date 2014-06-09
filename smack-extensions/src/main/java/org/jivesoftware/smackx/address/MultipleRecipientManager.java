@@ -22,6 +22,7 @@ import org.jivesoftware.smack.SmackException.NoResponseException;
 import org.jivesoftware.smack.SmackException.FeatureNotSupportedException;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.XMPPConnection;
+import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.XMPPException.XMPPErrorException;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Packet;
@@ -32,6 +33,7 @@ import org.jivesoftware.smackx.disco.ServiceDiscoveryManager;
 import org.jivesoftware.smackx.disco.packet.DiscoverInfo;
 import org.jivesoftware.smackx.disco.packet.DiscoverItems;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -73,8 +75,7 @@ public class MultipleRecipientManager {
      * @throws NoResponseException if there was no response from the server.
      * @throws NotConnectedException 
      */
-    public static void send(XMPPConnection connection, Packet packet, List<String> to, List<String> cc, List<String> bcc) throws NoResponseException, XMPPErrorException, FeatureNotSupportedException, NotConnectedException
-   {
+    public static void send(XMPPConnection connection, Packet packet, List<String> to, List<String> cc, List<String> bcc) throws SmackException, XMPPException, IOException {
         send(connection, packet, to, cc, bcc, null, null, false);
     }
 
@@ -103,7 +104,7 @@ public class MultipleRecipientManager {
      * @throws NotConnectedException 
      */
     public static void send(XMPPConnection connection, Packet packet, List<String> to, List<String> cc, List<String> bcc,
-            String replyTo, String replyRoom, boolean noReply) throws NoResponseException, XMPPErrorException, FeatureNotSupportedException, NotConnectedException {
+            String replyTo, String replyRoom, boolean noReply) throws SmackException, XMPPException, IOException {
         String serviceAddress = getMultipleRecipienServiceAddress(connection);
         if (serviceAddress != null) {
             // Send packet to target users using multiple recipient service provided by the server
@@ -134,8 +135,7 @@ public class MultipleRecipientManager {
      * @throws SmackException 
      * @throws XMPPErrorException 
      */
-    public static void reply(XMPPConnection connection, Message original, Message reply) throws SmackException, XMPPErrorException
-         {
+    public static void reply(XMPPConnection connection, Message original, Message reply) throws SmackException, XMPPException, IOException {
         MultipleRecipientInfo info = getMultipleRecipientInfo(original);
         if (info == null) {
             throw new SmackException("Original message does not contain multiple recipient info");
@@ -290,7 +290,7 @@ public class MultipleRecipientManager {
      * @throws XMPPErrorException 
      * @throws NotConnectedException 
      */
-    private static String getMultipleRecipienServiceAddress(XMPPConnection connection) throws NoResponseException, XMPPErrorException, NotConnectedException {
+    private static String getMultipleRecipienServiceAddress(XMPPConnection connection) throws SmackException, XMPPException, IOException {
         String serviceName = connection.getServiceName();
         String serviceAddress = (String) services.get(serviceName);
         if (serviceAddress == null) {

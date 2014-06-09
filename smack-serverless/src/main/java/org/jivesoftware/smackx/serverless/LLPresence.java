@@ -248,6 +248,10 @@ public class LLPresence {
         return ver;
     }
 
+    public String getNodeVer() {
+        return node + "#" + hash;
+    }
+
     public int getPort() {
         return port;
     }

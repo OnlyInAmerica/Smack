@@ -16,6 +16,7 @@
 
 package org.jivesoftware.smackx.serverless;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -24,13 +25,17 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 
+import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.Message;
+import org.jivesoftware.smack.packet.XMPPError;
 import org.jivesoftware.smackx.disco.NodeInformationProvider;
 import org.jivesoftware.smackx.disco.ServiceDiscoveryManager;
 import org.jivesoftware.smackx.caps.EntityCapsManager;
+import org.jivesoftware.smackx.disco.packet.DiscoverInfo;
+import org.jivesoftware.smackx.disco.packet.DiscoverItems;
 import org.jivesoftware.smackx.xdata.packet.DataForm;
 
 /** 
@@ -99,20 +104,25 @@ public class LLServiceDiscoveryManager extends ServiceDiscoveryManager {
                 LLPresence op = service.getPresenceByServiceName(o);
 
                 // Add existing values, if any
-                if (np != null && np.getNode() != null && np.getVer() != null)
-                    capsManager.addUserCapsNode(n, np.getNode() + "#" + np.getVer());
+                if (np != null && np.getNode() != null && np.getVer() != null){
+                    capsManager.addUserCapsNode(n, np.getNode(), np.getVer());
+                }
                 if (op != null && op.getNode() != null && op.getVer() != null)
-                    capsManager.addUserCapsNode(o, op.getNode() + "#" + op.getVer());
+                    capsManager.addUserCapsNode(o, op.getNode(), op.getVer());
             }
         });
 
         // Entity Capabilities
-        capsManager = new EntityCapsManager(this);
-        capsManager.addCapsVerListener(new CapsPresenceRenewer());
-        capsManager.calculateEntityCapsVersion(getOwnDiscoverInfo(),
-                ServiceDiscoveryManager.getIdentityType(),
-                ServiceDiscoveryManager.getIdentityName(),
-                extendedInfo);
+        capsManager = EntityCapsManager.getInstanceFor(connection);
+        EntityCapsManager.addCapsVerListener(new CapsPresenceRenewer());
+        // Provide EntityCaps features, identities & node to own DiscoverInfo
+//        capsManager.calculateEntityCapsVersion(getOwnDiscoverInfo(),
+//                getIdentityType(),
+//                getIdentityName(),
+//                extendedInfo);
+
+        capsManager.updateLocalEntityCaps();
+
 
         // Add presence listener. The presence listener will gather
         // entity caps data
@@ -123,7 +133,7 @@ public class LLServiceDiscoveryManager extends ServiceDiscoveryManager {
                     presence.getVer() != null) {
                     // Add presence to caps manager
                     capsManager.addUserCapsNode(presence.getServiceName(),
-                        presence.getNode() + "#" + presence.getVer());
+                        presence.getNode(), presence.getVer());
                 }
             }
 
@@ -158,17 +168,19 @@ public class LLServiceDiscoveryManager extends ServiceDiscoveryManager {
         return serviceManagers.get(service);
     }
 
-    /**
-     * Sets the type of client that will be returned when asked for the client identity in a 
-     * disco request. The valid types are defined by the category client. Follow this link to learn 
-     * the possible types: <a href="http://www.jabber.org/registrar/disco-categories.html#client">Jabber::Registrar</a>.
-     * 
-     * @param type the type of client that will be returned when asked for the client identity in a 
-     *          disco request.
-     */
-    public static void setIdentityType(String type) {
-        ServiceDiscoveryManager.setIdentityType(type);
-    }
+//    When would we change the Identity type?
+//    use ServiceDiscoveryManager#setIdentity(Identity)
+//    /**
+//     * Sets the type of client that will be returned when asked for the client identity in a
+//     * disco request. The valid types are defined by the category client. Follow this link to learn
+//     * the possible types: <a href="http://www.jabber.org/registrar/disco-categories.html#client">Jabber::Registrar</a>.
+//     *
+//     * @param type the type of client that will be returned when asked for the client identity in a
+//     *          disco request.
+//     */
+//    public static void setIdentityType(String type) {
+//        ServiceDiscoveryManager.setIdentityType(type);
+//    }
 
     /**
      * Add discover info response data.
@@ -178,16 +190,15 @@ public class LLServiceDiscoveryManager extends ServiceDiscoveryManager {
     public void addDiscoverInfoTo(DiscoverInfo response) {
         // Set this client identity
         DiscoverInfo.Identity identity = new DiscoverInfo.Identity("client",
-                getIdentityName());
-        identity.setType(getIdentityType());
+                getIdentityName(), getIdentityType());
         response.addIdentity(identity);
         // Add the registered features to the response
         synchronized (features) {
             // Add Entity Capabilities (XEP-0115) feature node.
             response.addFeature("http://jabber.org/protocol/caps");
 
-            for (Iterator<String> it = getFeatures(); it.hasNext();) {
-                response.addFeature(it.next());
+            for (String feature : getFeatures()) {
+                response.addFeature(feature);
             }
             if (extendedInfo != null) {
                 response.addExtension(extendedInfo);
@@ -203,7 +214,7 @@ public class LLServiceDiscoveryManager extends ServiceDiscoveryManager {
     public DiscoverInfo getOwnDiscoverInfo() {
         DiscoverInfo di = new DiscoverInfo();
         di.setType(IQ.Type.RESULT);
-        di.setNode(capsManager.getNode() + "#" + getEntityCapsVersion());
+        di.setNode(capsManager.getLocalNodeVer());
 
         // Add discover info
         addDiscoverInfoTo(di);
@@ -221,7 +232,7 @@ public class LLServiceDiscoveryManager extends ServiceDiscoveryManager {
      * @param serviceName remote service to which we wish to be connected to.
      * @returns an established connection to the given service name.
      */
-    private XMPPLLConnection getConnection(String serviceName) throws XMPPException {
+    private XMPPLLConnection getConnection(String serviceName) throws XMPPException, IOException, SmackException {
         return service.getConnection(serviceName);
     }
 
@@ -232,7 +243,7 @@ public class LLServiceDiscoveryManager extends ServiceDiscoveryManager {
      * @param serviceName the name of the service we wish to get the ServiceDiscoveryManager instance for.
      * @returns the ServiceDiscoveryManager instance.
      */
-    private ServiceDiscoveryManager getInstance(String serviceName) throws XMPPException  {
+    private ServiceDiscoveryManager getInstance(String serviceName) throws XMPPException, IOException, SmackException {
         return ServiceDiscoveryManager.getInstanceFor(getConnection(serviceName));
     }
 
@@ -281,12 +292,12 @@ public class LLServiceDiscoveryManager extends ServiceDiscoveryManager {
     /**
      * Returns the discovered information of a given XMPP entity addressed by its JID.
      * 
-     * @param entityID the address of the XMPP entity.
+     * @param serviceName the service name (Full JID) of the XMPP entity.
      * @return the discovered information.
      * @throws XMPPException if the operation failed for some reason.
      */
-    public DiscoverInfo discoverInfo(String serviceName) throws XMPPException {
-        DiscoverInfo info = capsManager.getDiscoverInfoByUser(serviceName);
+    public DiscoverInfo discoverInfo(String serviceName) throws XMPPException, IOException, SmackException {
+        DiscoverInfo info = EntityCapsManager.getDiscoverInfoByUser(serviceName);
 
         // If there is no cached information retrieve new one
         if (info == null) {
@@ -295,7 +306,8 @@ public class LLServiceDiscoveryManager extends ServiceDiscoveryManager {
 
             if (capsManager != null) {
                 // Get the newest node#version
-                node = capsManager.getNodeVersionByUser(serviceName);
+                //node = capsManager.getNodeVersionByUser(serviceName);
+                node = EntityCapsManager.getNodeVerHashByJid(serviceName).getNode();
             }
 
             return discoverInfo(serviceName, node);
@@ -310,12 +322,12 @@ public class LLServiceDiscoveryManager extends ServiceDiscoveryManager {
      * note attribute. Use this message only when trying to query information which is not 
      * directly addressable.
      * 
-     * @param entityID the address of the XMPP entity.
+     * @param serviceName the service name of the XMPP entity.
      * @param node the attribute that supplements the 'jid' attribute.
      * @return the discovered information.
      * @throws XMPPException if the operation failed for some reason.
      */
-    public DiscoverInfo discoverInfo(String serviceName, String node) throws XMPPException {
+    public DiscoverInfo discoverInfo(String serviceName, String node) throws XMPPException, IOException, SmackException {
         // Discover the entity's info
         DiscoverInfo disco = new DiscoverInfo();
         disco.setType(IQ.Type.GET);
@@ -324,15 +336,15 @@ public class LLServiceDiscoveryManager extends ServiceDiscoveryManager {
 
         IQ result = service.getIQResponse(disco);
         if (result == null) {
-            throw new XMPPException("No response from the server.");
+            throw new XMPPException.XMPPErrorException("No response from the server.", new XMPPError(XMPPError.Condition.remote_server_timeout));
         }
         if (result.getType() == IQ.Type.ERROR) {
-            throw new XMPPException(result.getError());
+            throw new XMPPException.XMPPErrorException(result.getError());
         }
         if (result instanceof DiscoverInfo) {
             return (DiscoverInfo) result;
         }
-        throw new XMPPException("Result was not a disco info reply.");
+        throw new XMPPException.XMPPErrorException("Result was not a disco info reply.", new XMPPError(XMPPError.Condition.undefined_condition));
     }
 
     /**
@@ -342,7 +354,8 @@ public class LLServiceDiscoveryManager extends ServiceDiscoveryManager {
      * @return the discovered information.
      * @throws XMPPException if the operation failed for some reason.
      */
-    public DiscoverItems discoverItems(String entityID) throws XMPPException {
+    // TODO: Why is this method duplicated from ServiceDiscoveryManager?
+    public DiscoverItems discoverItems(String entityID) throws XMPPException, IOException, SmackException {
         return discoverItems(entityID, null);
     }
 
@@ -351,12 +364,12 @@ public class LLServiceDiscoveryManager extends ServiceDiscoveryManager {
      * note attribute. Use this message only when trying to query information which is not 
      * directly addressable.
      * 
-     * @param entityID the address of the XMPP entity.
+     * @param serviceName the service name of the XMPP entity.
      * @param node the attribute that supplements the 'jid' attribute.
      * @return the discovered items.
      * @throws XMPPException if the operation failed for some reason.
      */
-    public DiscoverItems discoverItems(String serviceName, String node) throws XMPPException {
+    public DiscoverItems discoverItems(String serviceName, String node) throws XMPPException, IOException, SmackException {
         // Discover the entity's items
         DiscoverItems disco = new DiscoverItems();
         disco.setType(IQ.Type.GET);
@@ -365,15 +378,15 @@ public class LLServiceDiscoveryManager extends ServiceDiscoveryManager {
 
         IQ result = service.getIQResponse(disco);
         if (result == null) {
-            throw new XMPPException("No response from the server.");
+            throw new XMPPException.XMPPErrorException("No response from the server.", new XMPPError(XMPPError.Condition.remote_server_timeout));
         }
         if (result.getType() == IQ.Type.ERROR) {
-            throw new XMPPException(result.getError());
+            throw new XMPPException.XMPPErrorException(result.getError());
         }
-        if (result instanceof DiscoverItems) {
+        if (result instanceof DiscoverInfo) {
             return (DiscoverItems) result;
         }
-        throw new XMPPException("Result was not a disco items reply.");
+        throw new XMPPException.XMPPErrorException("Result was not a disco info reply.", new XMPPError(XMPPError.Condition.undefined_condition));
     }
 
     /**
@@ -389,6 +402,7 @@ public class LLServiceDiscoveryManager extends ServiceDiscoveryManager {
      * @param listener the NodeInformationProvider responsible for providing items related
      *      to the node.
      */
+    // TODO: Should override and call super
     public void setNodeInformationProvider(String node,
             NodeInformationProvider listener) {
         // store this NodeInformationProvider so we can add it to new connections.
@@ -409,6 +423,7 @@ public class LLServiceDiscoveryManager extends ServiceDiscoveryManager {
      * 
      * @param node the node to remove the associated NodeInformationProvider.
      */
+    // TODO: Should override and call super
     public void removeNodeInformationProvider(String node) {
         // remove from wrapper class
         nodeInformationProviders.remove(node);
@@ -423,9 +438,9 @@ public class LLServiceDiscoveryManager extends ServiceDiscoveryManager {
      * 
      * @return an Iterator on the supported features by this XMPP entity.
      */
-    public Iterator<String> getFeatures() {
+    public List<String> getFeatures() {
         synchronized (features) {
-            return Collections.unmodifiableList(new ArrayList<String>(features)).iterator();
+            return Collections.unmodifiableList(new ArrayList<String>(features));
         }
     }
 
@@ -488,7 +503,7 @@ public class LLServiceDiscoveryManager extends ServiceDiscoveryManager {
      * @return true if the server supports publishing of items.
      * @throws XMPPException if the operation failed for some reason.
      */
-    public boolean canPublishItems(String entityID) throws XMPPException {
+    public boolean canPublishItems(String entityID) throws XMPPException, IOException, SmackException {
         DiscoverInfo info = discoverInfo(entityID);
         return ServiceDiscoveryManager.canPublishItems(info);
     }
@@ -504,7 +519,7 @@ public class LLServiceDiscoveryManager extends ServiceDiscoveryManager {
      * @throws XMPPException if the operation failed for some reason.
      */
     public void publishItems(String entityID, DiscoverItems discoverItems)
-            throws XMPPException {
+            throws XMPPException, IOException, SmackException {
         publishItems(entityID, null, discoverItems);
     }
 
@@ -520,16 +535,17 @@ public class LLServiceDiscoveryManager extends ServiceDiscoveryManager {
      * @throws XMPPException if the operation failed for some reason.
      */
     public void publishItems(String entityID, String node, DiscoverItems discoverItems)
-            throws XMPPException {
+            throws XMPPException, IOException, SmackException {
         getInstance(entityID).publishItems(entityID, node, discoverItems);
     }
 
     private void renewEntityCapsVersion() {
         if (capsManager != null) {
-            capsManager.calculateEntityCapsVersion(getOwnDiscoverInfo(),
-                    ServiceDiscoveryManager.getIdentityType(),
-                    ServiceDiscoveryManager.getIdentityName(),
-                    extendedInfo);
+            capsManager.updateLocalEntityCaps();
+//            capsManager.calculateEntityCapsVersion(getOwnDiscoverInfo(),
+//                    ServiceDiscoveryManager.getIdentityType(),
+//                    ServiceDiscoveryManager.getIdentityName(),
+//                    extendedInfo);
         }
     }
 
@@ -575,13 +591,13 @@ public class LLServiceDiscoveryManager extends ServiceDiscoveryManager {
         }
     }
 
-    private class CapsPresenceRenewer implements CapsVerListener {
+    private class CapsPresenceRenewer implements EntityCapsManager.CapsVerListener {
         public void capsVerUpdated(String ver) {
             synchronized (service) {
                 try {
                     LLPresence presence = service.getLocalPresence();
-                    presence.setHash(EntityCapsManager.HASH_METHOD);
-                    presence.setNode(capsManager.getNode());
+                    presence.setHash(EntityCapsManager.DEFAULT_HASH);
+                    presence.setNode(capsManager.getEntityNode());
                     presence.setVer(ver);
                     service.updateLocalPresence(presence);
                 }
