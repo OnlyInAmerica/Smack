@@ -85,6 +85,10 @@ public class PacketCollector {
         }
     }
 
+    public boolean isCanceled() {
+        return cancelled;
+    }
+
     /**
      * Returns the packet filter associated with this packet collector. The packet
      * filter is used to determine what packets are queued as results.
@@ -104,13 +108,13 @@ public class PacketCollector {
      *      results.
      */
     public Packet pollResult() {
-    	return resultQueue.poll();
+        return resultQueue.poll();
     }
 
     /**
      * Returns the next available packet. The method call will block (not return) until a packet is
      * available.
-     * 
+     *
      * @return the next available packet.
      */
     public Packet nextResultBlockForever() {
@@ -125,7 +129,7 @@ public class PacketCollector {
     /**
      * Returns the next available packet. The method call will block until the connection's default
      * timeout has elapsed.
-     * 
+     *
      * @return the next availabe packet.
      */
     public Packet nextResult() {
@@ -140,19 +144,19 @@ public class PacketCollector {
      * @return the next available packet.
      */
     public Packet nextResult(long timeout) {
-    	try {
-			return resultQueue.poll(timeout, TimeUnit.MILLISECONDS);
-		}
-		catch (InterruptedException e) {
-			throw new RuntimeException(e);
-		}
+        try {
+            return resultQueue.poll(timeout, TimeUnit.MILLISECONDS);
+        }
+        catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
      * Returns the next available packet. The method call will block until a packet is available or
      * the connections reply timeout has elapsed. If the timeout elapses without a result,
      * <tt>null</tt> will be returned. This method does also cancel the PacketCollector.
-     * 
+     *
      * @return the next available packet.
      * @throws XMPPErrorException in case an error response.
      * @throws NoResponseException if there was no response from the server.
@@ -164,7 +168,7 @@ public class PacketCollector {
     /**
      * Returns the next available packet. The method call will block until a packet is available or
      * the <tt>timeout</tt> has elapsed. This method does also cancel the PacketCollector.
-     * 
+     *
      * @param timeout the amount of time to wait for the next packet (in milleseconds).
      * @return the next available packet.
      * @throws NoResponseException if there was no response from the server.
@@ -195,12 +199,12 @@ public class PacketCollector {
         if (packet == null) {
             return;
         }
-        
+
         if (packetFilter == null || packetFilter.accept(packet)) {
-        	while (!resultQueue.offer(packet)) {
-        		// Since we know the queue is full, this poll should never actually block.
-        		resultQueue.poll();
-        	}
+            while (!resultQueue.offer(packet)) {
+                // Since we know the queue is full, this poll should never actually block.
+                resultQueue.poll();
+            }
         }
     }
 }
