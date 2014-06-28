@@ -47,7 +47,7 @@ public class ConnectionConfiguration implements Cloneable {
      * of the server. However, there are some servers like google where host would be
      * talk.google.com and the serviceName would be gmail.com.
      */
-    private String serviceName;
+    protected String serviceName;
 
     protected List<HostAddress> hostAddresses;
 
