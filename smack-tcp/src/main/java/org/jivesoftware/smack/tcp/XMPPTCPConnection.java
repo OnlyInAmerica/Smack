@@ -894,7 +894,7 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
 
         private volatile boolean done;
 
-        PacketReader() throws SmackException {
+        public PacketReader() throws SmackException {
             this.init();
         }
 
@@ -927,7 +927,7 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
          * @throws IOException 
          * @throws SmackException 
          */
-        synchronized void startup() throws IOException, SmackException {
+        public synchronized void startup() throws IOException, SmackException {
             readerThread.start();
 
             try {
@@ -948,7 +948,7 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
         /**
          * Shuts the packet reader down. This method simply sets the 'done' flag to true.
          */
-        void shutdown() {
+        public void shutdown() {
             done = true;
         }
 
@@ -1224,7 +1224,7 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
         /**
          * Creates a new packet writer with the specified connection.
          */
-        PacketWriter() {
+        public PacketWriter() {
             init();
         }
 
@@ -1271,7 +1271,7 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
          * packet writer will continue writing packets until {@link #shutdown} or an
          * error occurs.
          */
-        void startup() {
+        public void startup() {
             writerThread.start();
         }
 
@@ -1283,7 +1283,7 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
          * Shuts down the packet writer. Once this method has been called, no further
          * packets will be written to the server.
          */
-        void shutdown() {
+        public void shutdown() {
             done = true;
             queue.shutdown();
             synchronized(shutdownDone) {
@@ -1390,7 +1390,7 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
          *
          * @throws IOException If an error occurs while sending the stanza to the server.
          */
-        void openStream() throws IOException {
+        protected void openStream() throws IOException {
             StringBuilder stream = new StringBuilder();
             stream.append("<stream:stream");
             stream.append(" to=\"").append(getServiceName()).append("\"");

@@ -15,10 +15,11 @@
  * limitations under the License.
  */
 
-package org.jivesoftware.smack;
+package org.jivesoftware.smack.serverless;
 
 
-import org.jivesoftware.smack.tcp.LLPresence;
+import org.jivesoftware.smack.ConnectionConfiguration;
+import org.jivesoftware.smack.serverless.LLPresence;
 
 import javax.net.SocketFactory;
 import java.net.Socket;

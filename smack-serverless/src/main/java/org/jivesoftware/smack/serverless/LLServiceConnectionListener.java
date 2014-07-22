@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2009 Jonas Ådahl.
+ * Copyright 2003-2014 Jive Software.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,25 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package org.jivesoftware.smack.tcp;
+package org.jivesoftware.smack.serverless;
 
 
 /**
- * Notification about new Link-local chat sessions.
+ * Notification about when new Link-local connections associated with a
+ * specific Link-local service has been established.
  */
-public interface LLChatListener {
+public interface LLServiceConnectionListener {
 
     /**
-     * New chat has been created.
+     * A new link-local connection has been established.
      *
-     * @param chat the newly created chat.
+     * @param connection the new established connection.
      */
-    public void newChat(LLChat chat);
-
-    /**
-     * Called when a chat session is invalidated (due to service
-     * name changes.
-     */
-    public void chatInvalidated(LLChat chat);
+    public void connectionCreated(XMPPLLConnection connection);
 }

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2009 Jonas Ådahl.
+ * Copyright 2003-2014 Jive Software.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package org.jivesoftware.smack.tcp;
+package org.jivesoftware.smack.serverless;
 
 
 /**
- * Notification about when new Link-local connections has been established.
+ * Notification for new Link-local services created.
  */
-public interface LLConnectionListener {
+public interface LLServiceListener {
 
     /**
-     * A new link-local connection has been established.
+     * The function called when a new Link-local service is created.
      *
-     * @param connection the new established connection.
+     * @param service the new service
      */
-    public void connectionCreated(XMPPLLConnection connection);
+    public void serviceCreated(LLService service);
 }

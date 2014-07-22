@@ -17,8 +17,8 @@
 
 package org.jivesoftware.smackx;
 
-import org.jivesoftware.smack.tcp.LLPresence;
-import org.jivesoftware.smack.tcp.LLPresenceListener;
+import org.jivesoftware.smack.serverless.LLPresence;
+import org.jivesoftware.smack.serverless.LLPresenceListener;
 
 public class MDNSListener implements LLPresenceListener {
 

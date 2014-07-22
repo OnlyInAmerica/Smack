@@ -15,20 +15,24 @@
  * limitations under the License.
  */
 
-package org.jivesoftware.smack.tcp;
+package org.jivesoftware.smack.serverless;
 
-
-import org.jivesoftware.smack.packet.Message;
 
 /**
- * Notification when messages are being delivered to a chat.
+ * Notification about new Link-local chat sessions.
  */
-public interface LLMessageListener {
+public interface LLChatListener {
+
     /**
-     * New message in chat.
+     * New chat has been created.
      *
-     * @param chat the chat session which the message was delivered to.
-     * @param message the message being delivered.
+     * @param chat the newly created chat.
      */
-    void processMessage(LLChat chat, Message message);
+    public void newChat(LLChat chat);
+
+    /**
+     * Called when a chat session is invalidated (due to service
+     * name changes.
+     */
+    public void chatInvalidated(LLChat chat);
 }

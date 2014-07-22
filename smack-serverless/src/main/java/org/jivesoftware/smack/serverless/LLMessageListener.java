@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2003-2014 Jive Software.
+ * Copyright 2009 Jonas Ådahl.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jivesoftware.smack.tcp;
 
+package org.jivesoftware.smack.serverless;
+
+
+import org.jivesoftware.smack.packet.Message;
 
 /**
- * Notification for new Link-local services created.
+ * Notification when messages are being delivered to a chat.
  */
-public interface LLServiceListener {
-
+public interface LLMessageListener {
     /**
-     * The function called when a new Link-local service is created.
+     * New message in chat.
      *
-     * @param service the new service
+     * @param chat the chat session which the message was delivered to.
+     * @param message the message being delivered.
      */
-    public void serviceCreated(LLService service);
+    void processMessage(LLChat chat, Message message);
 }

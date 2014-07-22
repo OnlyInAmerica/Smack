@@ -14,14 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jivesoftware.smack.tcp;
+package org.jivesoftware.smack.serverless;
 
 
-import org.jivesoftware.smack.LLConnectionConfiguration;
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.packet.XMPPError;
+import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 import org.xmlpull.v1.XmlPullParser;
 
 import java.io.BufferedReader;
@@ -426,7 +426,7 @@ public class XMPPLLConnection extends XMPPTCPConnection
         LLPacketReader() throws SmackException {
         }
 
-        synchronized protected void startup() throws IOException, SmackException {
+        public synchronized void startup() throws IOException, SmackException {
             readerThread.start();
 
             try {
