@@ -68,14 +68,15 @@ public class ServiceDiscoveryManager extends Manager {
     private Set<DiscoverInfo.Identity> identities = new HashSet<DiscoverInfo.Identity>();
     private DiscoverInfo.Identity identity = defaultIdentity;
 
-    private EntityCapsManager capsManager;
+    protected EntityCapsManager capsManager;
 
     private static Map<XMPPConnection, ServiceDiscoveryManager> instances =
             Collections.synchronizedMap(new WeakHashMap<XMPPConnection, ServiceDiscoveryManager>());
 
-    private final Set<String> features = new HashSet<String>();
-    private DataForm extendedInfo = null;
-    private Map<String, NodeInformationProvider> nodeInformationProviders =
+    protected static final Set<String> defaultFeatures = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+    protected final Set<String> features = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+    protected DataForm extendedInfo = null;
+    protected Map<String, NodeInformationProvider> nodeInformationProviders =
             new ConcurrentHashMap<String, NodeInformationProvider>();
 
     // Create a new ServiceDiscoveryManager on every established connection
@@ -104,7 +105,7 @@ public class ServiceDiscoveryManager extends Manager {
      * 
      * @param connection the connection to which a ServiceDiscoveryManager is going to be created.
      */
-    private ServiceDiscoveryManager(XMPPConnection connection) {
+    protected ServiceDiscoveryManager(XMPPConnection connection) {
         super(connection);
         // Register the new instance and associate it with the connection 
         instances.put(connection, this);
@@ -313,12 +314,10 @@ public class ServiceDiscoveryManager extends Manager {
         response.addIdentities(getIdentities());
 
         // Add the registered features to the response
-        synchronized (features) {
-            for (String feature : getFeatures()) {
-                response.addFeature(feature);
-            }
-            response.addExtension(extendedInfo);
+        for (String feature : getFeatures()) {
+            response.addFeature(feature);
         }
+        response.addExtension(extendedInfo);
     }
 
     /**
@@ -376,9 +375,7 @@ public class ServiceDiscoveryManager extends Manager {
      * @return a List of the supported features by this XMPP entity.
      */
     public List<String> getFeatures() {
-        synchronized (features) {
-            return Collections.unmodifiableList(new ArrayList<String>(features));
-        }
+        return Collections.unmodifiableList(new ArrayList<String>(features));
     }
 
     /**
@@ -387,9 +384,7 @@ public class ServiceDiscoveryManager extends Manager {
      * @return a copy of the List on the supported features by this XMPP entity.
      */
     public List<String> getFeaturesList() {
-        synchronized (features) {
-            return new LinkedList<String>(features);
-        }
+        return new LinkedList<String>(features);
     }
 
     /**
@@ -404,12 +399,25 @@ public class ServiceDiscoveryManager extends Manager {
      * @param feature the feature to register as supported.
      */
     public void addFeature(String feature) {
-        synchronized (features) {
-            if (!features.contains(feature)) {
-                features.add(feature);
-                renewEntityCapsVersion();
-            }
+        if (!features.contains(feature)) {
+            features.add(feature);
+            renewEntityCapsVersion();
         }
+    }
+
+    /**
+     * Registers that a new feature is supported by all future XMPP entities. This
+     * method has the same effect as calling {@link #addFeature(String)} on each
+     * ServiceDiscoveryManager created after this call.
+     *
+     * This method is useful if you have a set of features you'd like all
+     * ServiceDiscoveryManagers to support, or if you'd like to specify features
+     * before a connection is established.
+     *
+     * @param feature the feature to register as supported for all future ServiceDiscoveryManagers
+     */
+    public static void addDefaultFeature(String feature) {
+        defaultFeatures.add(feature);
     }
 
     /**
@@ -421,10 +429,22 @@ public class ServiceDiscoveryManager extends Manager {
      * @param feature the feature to remove from the supported features.
      */
     public void removeFeature(String feature) {
-        synchronized (features) {
+        if (features.contains(feature)) {
             features.remove(feature);
             renewEntityCapsVersion();
         }
+    }
+
+    /**
+     * Removes the specified feature from the default features to be supported
+     * by all future XMPP entities.
+     *
+     * This call does not affect ServiceDiscoveryMangers already created.
+     *
+     * @param feature the feature to remove from the default supported features of all future ServiceDiscoveryManagers.
+     */
+    public static void removeDefaultFeature(String feature) {
+        defaultFeatures.remove(feature);
     }
 
     /**
@@ -434,9 +454,7 @@ public class ServiceDiscoveryManager extends Manager {
      * @return a boolean indicating if the specified featured is registered or not.
      */
     public boolean includesFeature(String feature) {
-        synchronized (features) {
-            return features.contains(feature);
-        }
+        return features.contains(feature);
     }
 
     /**
@@ -698,7 +716,7 @@ public class ServiceDiscoveryManager extends Manager {
     /**
      * Updates the Entity Capabilities Verification String if EntityCaps is enabled.
      */
-    private void renewEntityCapsVersion() {
+    protected void renewEntityCapsVersion() {
         if (capsManager != null && capsManager.entityCapsEnabled())
             capsManager.updateLocalEntityCaps();
     }

@@ -10,4 +10,5 @@ include 'smack-core',
 		'smack-legacy',
 		'smack-jingle',
 		'smack-bosh',
-		'smack-java7'
+		'smack-java7',
+		'smack-serverless'
