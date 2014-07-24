@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 
+import org.jivesoftware.smack.AbstractConnectionListener;
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
@@ -66,9 +67,10 @@ public class LLServiceDiscoveryManager extends ServiceDiscoveryManager {
         Please let me know (dbro@dbro.pro) if you've any thoughts on this matter.
      */
     static {
-        XMPPLLConnection.addLLConnectionListener(new LLConnectionListener() {
+        XMPPLLConnection.addLLConnectionListener(new AbstractConnectionListener<XMPPLLConnection>() {
+
             @Override
-            public void connectionCreated(XMPPLLConnection connection) {
+            public void connected(XMPPLLConnection connection) {
                 addLLServiceDiscoveryManager(getInstanceFor(connection));
             }
         });

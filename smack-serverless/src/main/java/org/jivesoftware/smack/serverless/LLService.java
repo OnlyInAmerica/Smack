@@ -18,6 +18,8 @@
 package org.jivesoftware.smack.serverless;
 
 
+import org.jivesoftware.smack.AbstractConnectionListener;
+import org.jivesoftware.smack.ChatManagerListener;
 import org.jivesoftware.smack.ConnectionListener;
 import org.jivesoftware.smack.PacketCollector;
 import org.jivesoftware.smack.PacketListener;
@@ -32,8 +34,6 @@ import org.jivesoftware.smack.filter.PacketFilter;
 import org.jivesoftware.smack.filter.AndFilter;
 import org.jivesoftware.smack.filter.OrFilter;
 import org.jivesoftware.smack.filter.PacketIDFilter;
-import org.jivesoftware.smack.filter.PacketTypeFilter;
-import org.jivesoftware.smack.filter.MessageTypeFilter;
 import org.jivesoftware.smack.filter.IQTypeFilter;
 import org.jivesoftware.smack.packet.XMPPError;
 
@@ -114,7 +114,7 @@ public abstract class LLService {
     private LLPresenceDiscoverer presenceDiscoverer;
 
     // chat listeners gets notified when new chats are created
-    private Set<LLChatListener> chatListeners = new CopyOnWriteArraySet<LLChatListener>();
+    private Set<ChatManagerListener<LLChat>> chatListeners = new CopyOnWriteArraySet<>();
     
     // Set of Packet collector wrappers
     private Set<CollectorWrapper> collectorWrappers =
@@ -154,8 +154,10 @@ public abstract class LLService {
         presenceDiscoverer = discoverer;
         service = this;
 
-        XMPPLLConnection.addLLConnectionListener(new LLConnectionListener() {
-            public void connectionCreated(XMPPLLConnection connection) {
+        XMPPLLConnection.addLLConnectionListener(new AbstractConnectionListener<XMPPLLConnection>() {
+
+            @Override
+            public void connected(XMPPLLConnection connection) {
                 // We only care about this connection if we were the one
                 // creating it
                 if (isAssociatedConnection(connection)) {
@@ -172,16 +174,6 @@ public abstract class LLService {
                     // service has been created.
                     notifyNewServiceConnection(connection);
 
-                    // add message listener. filter logic:
-                    // type = msg ^ (msg.type = chat v msg.type = normal v msg.type = error)
-                    connection.addPacketListener(new MessageListener(),
-                        new AndFilter(
-                            new PacketTypeFilter(Message.class),
-                            new OrFilter(
-                                MessageTypeFilter.CHAT,
-                                new OrFilter(
-                                    MessageTypeFilter.NORMAL,
-                                    MessageTypeFilter.ERROR))));
 
                     // add other existing packet filters associated with this service
                     for (ListenerWrapper wrapper : listeners.values()) {
@@ -396,16 +388,6 @@ public abstract class LLService {
         // update our own presence with the new name, for future connections
         presence.setServiceName(newName);
 
-        // Cleanup chats (remove tho two affected chats)
-        LLChat c1 = removeLLChat(newName);
-        LLChat c2 = removeLLChat(oldName);
-        for (LLChatListener listener : chatListeners) {
-            if (c1 != null)
-                listener.chatInvalidated(c1);
-            if (c2 != null)
-                listener.chatInvalidated(c2);
-        }
-
         // clean up connections
         XMPPLLConnection c;
         c = getConnectionTo(oldName);
@@ -545,7 +527,7 @@ public abstract class LLService {
      *
      * @param listener the listener to be added.
      */
-    public void addLLChatListener(LLChatListener listener) {
+    public void addLLChatListener(ChatManagerListener<LLChat> listener) {
         chatListeners.add(listener);
     }
 
@@ -554,7 +536,7 @@ public abstract class LLService {
      *
      * @param listener the listener to be removed.
      */
-    public void removeLLChatListener(LLChatListener listener) {
+    public void removeLLChatListener(ChatManagerListener<LLChat> listener) {
         chatListeners.remove(listener);
     }
 
@@ -643,10 +625,16 @@ public abstract class LLService {
         return chats.remove(serviceName);
     }
 
+    /**
+     * Returns a new {@link org.jivesoftware.smack.serverless.LLChat}
+     * at the request of the local client.
+     * This method should not be used to create Chat sessions
+     * in response to messages received from remote peers.
+     */
     void newLLChat(LLChat chat) {
         chats.put(chat.getServiceName(), chat);
-        for (LLChatListener listener : chatListeners) {
-            listener.newChat(chat);
+        for (ChatManagerListener<LLChat> listener : chatListeners) {
+            listener.chatCreated(chat, true);
         }
     }
 
@@ -654,10 +642,13 @@ public abstract class LLService {
      * Get a LLChat associated with a given service name.
      * If no LLChat session is available, a new one is created.
      *
+     * This method should not be used to create Chat sessions
+     * in response to messages received from remote peers.
+     *
      * @param serviceName the service name
      * @return a chat session instance associated with the given service name.
      */
-    public LLChat getChat(String serviceName) throws XMPPException {
+    public LLChat getChat(String serviceName) throws XMPPException, IOException, SmackException {
         LLChat chat = chats.get(serviceName);
         if (chat == null) {
             LLPresence presence = getPresenceByServiceName(serviceName);
@@ -843,33 +834,6 @@ public abstract class LLService {
                 removeIngoingConnection(connection);
 
             removeAssociatedConnection(connection);
-        }
-    }
-
-    /**
-     * MessageListener listenes for messages from connections and delivers them
-     * to the corresponding chat session. If no session is available, a new one
-     * is created.
-     */
-    private class MessageListener implements PacketListener {
-        public void processPacket(Packet packet) {
-            // handle message
-            if (packet instanceof Message) {
-                Message message = (Message)packet;
-                String remoteServiceName = message.getFrom();
-                LLPresence presence =  getPresenceByServiceName(remoteServiceName);
-
-                // Get existing chat instance or create a new one and deliver
-                // the message.
-                try {
-                    getChat(remoteServiceName).deliver(message);
-                }
-                catch (XMPPException xe) {
-                    // If getChat throws an exception, it's because no
-                    // presence could be found, thus known origin.
-                    service.unknownOriginMessage(message);
-                }
-            }
         }
     }
 

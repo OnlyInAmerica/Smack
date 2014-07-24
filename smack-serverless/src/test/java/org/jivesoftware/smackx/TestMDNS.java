@@ -17,14 +17,14 @@
 
 package org.jivesoftware.smackx;
 
+import org.jivesoftware.smack.ChatManagerListener;
+import org.jivesoftware.smack.MessageListener;
 import org.jivesoftware.smack.SmackConfiguration;
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.serverless.JmDNSService;
 import org.jivesoftware.smack.serverless.LLChat;
-import org.jivesoftware.smack.serverless.LLChatListener;
-import org.jivesoftware.smack.serverless.LLMessageListener;
 import org.jivesoftware.smack.serverless.LLPresence;
 import org.jivesoftware.smack.serverless.LLService;
 import org.jivesoftware.smack.serverless.LLServiceDiscoveryManager;
@@ -54,9 +54,6 @@ public class TestMDNS {
         //Logger.global.setLevel(Level.FINEST);
         //Logger.getLogger("javax.jmdns.impl.JmDNSImpl").addHandler(ch);
         //Logger.getLogger("javax.jmdns.impl.SocketListener").setLevel(Level.FINEST);
-        //
-        //
-        //
         Logger.getLogger("javax.jmdns").log(Level.FINE, "Fine?");
         Logger.getLogger("javax.jmdns").log(Level.WARNING, "Warning?");
         TestMDNS test = new TestMDNS();
@@ -229,26 +226,24 @@ public class TestMDNS {
         }
     }
 
-    private class MyChatListener implements LLChatListener {
+    private class MyChatListener implements ChatManagerListener<LLChat> {
         public MyChatListener() {}
 
-        public void newChat(LLChat chat) {
+        @Override
+        public void chatCreated(LLChat chat, boolean createdLocally) {
             System.out.println("Discovered new chat being created.");
             chat.addMessageListener(new MyMessageListener(chat));
         }
-
-        public void chatInvalidated(LLChat chat) {
-            System.out.println("Chat invalidated: " + chat.getServiceName());
-        }
     }
 
-    private class MyMessageListener implements LLMessageListener {
+    private class MyMessageListener implements MessageListener<LLChat> {
         LLChat chat;
 
         MyMessageListener(LLChat chat) {
             this.chat = chat;
         }
 
+        @Override
         public void processMessage(LLChat chat, Message message) {
             try {
                 if (message.getBody().equals("ping")) {
@@ -259,11 +254,11 @@ public class TestMDNS {
                     service.spam();
                 }
                 else {
-                    System.out.println("### <" + chat.getServiceName() +
+                    System.out.println("### <" + chat.getParticipant() +
                             "> " + message.getBody());
                 }
             }
-            catch (SmackException | IOException | XMPPException xe) {
+            catch (SmackException | XMPPException xe) {
                 System.out.println("Caught XMPPException in message listener: " + xe);
                 xe.printStackTrace();
             }

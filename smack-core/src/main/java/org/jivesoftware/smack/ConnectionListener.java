@@ -26,19 +26,19 @@ package org.jivesoftware.smack;
  * 
  * @author Matt Tucker
  */
-public interface ConnectionListener {
+public interface ConnectionListener <T extends XMPPConnection> {
 
     /**
      * TODO
      * @param connection
      */
-    public void connected(XMPPConnection connection);
+    public void connected(T connection);
 
     /**
      * TODO
      * @param connection
      */
-    public void authenticated(XMPPConnection connection);
+    public void authenticated(T connection);
 
     /**
      * Notification that the connection was closed normally or that the reconnection

@@ -39,7 +39,7 @@ public class Chat {
 
     private ChatManager chatManager;
     private String threadID;
-    private String participant;
+    protected String participant;
     private final Set<MessageListener> listeners = new CopyOnWriteArraySet<MessageListener>();
 
     /**
@@ -49,7 +49,7 @@ public class Chat {
      * @param participant the user to chat with.
      * @param threadID the thread ID to use.
      */
-    Chat(ChatManager chatManager, String participant, String threadID) {
+    protected Chat(ChatManager chatManager, String participant, String threadID) {
         this.chatManager = chatManager;
         this.participant = participant;
         this.threadID = threadID;

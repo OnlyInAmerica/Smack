@@ -18,33 +18,24 @@
 package org.jivesoftware.smack.serverless;
 
 
+import org.jivesoftware.smack.Chat;
+import org.jivesoftware.smack.ChatManager;
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.XMPPException;
-import org.jivesoftware.smack.packet.Message;
 
 import java.io.IOException;
-import java.util.Set;
-import java.util.List;
-import java.util.LinkedList;
-import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.UUID;
 
 /**
  * Keeps track of a chat session between two link-local clients.
  */
-public class LLChat {
-    private String serviceName;
-    private LLService service;
+public class LLChat extends Chat {
 
-    private Set<LLMessageListener> listeners = new CopyOnWriteArraySet<LLMessageListener>();
-
-    // Queue for storing messages in case no listener is available when a
-    // message is to be delivered.
-    private List<Message> messageQueue = new LinkedList<Message>();
-
-
-    LLChat(LLService service, LLPresence presence) throws XMPPException {
-        this.service = service;
-        serviceName = presence.getServiceName();
+    LLChat(LLService service, LLPresence presence) throws XMPPException.XMPPErrorException, IOException, SmackException {
+        // In local link we have one chat per connection, threadIDs aren't meaningful
+        super(ChatManager.getInstanceFor(service.getConnection(presence.getServiceName())),
+                presence.getServiceName(),
+                UUID.randomUUID().toString());
     }
 
     /**
@@ -53,67 +44,7 @@ public class LLChat {
      * @return the service name of the remote client of this chat session
      */
     public String getServiceName() {
-        return serviceName;
+        return participant;
     }
 
-    /**
-     * Deliver a message to the message listeners.
-     *
-     * @param message the message to be delivered.
-     */
-    void deliver(Message message) {
-        // if no listeners are available, queue the messages for later.
-        synchronized (listeners) {
-            if (listeners.isEmpty())
-                messageQueue.add(message);
-            else {
-                for (LLMessageListener listener : listeners) {
-                    listener.processMessage(this, message);
-                }
-            }
-        }
-    }
-
-    /**
-     * Send a message packet to the remote client.
-     *
-     * @param message the message to be sent.
-     * @throws XMPPException if an exception occurs during transmission.
-     */
-    public void sendMessage(Message message) throws XMPPException, IOException, SmackException {
-        message.setTo(serviceName);
-        message.setType(Message.Type.chat);
-        service.sendMessage(message);
-    }
-
-    public Message generateMessage(String text) {
-        Message message = new Message(serviceName, Message.Type.chat);
-        message.setBody(text);
-        return message;
-    }
-
-    /**
-     * Send a message to the remote client.
-     *
-     * @param text the message to be sent.
-     * @throws XMPPException if an exception occurs during transmission.
-     */
-    public void sendMessage(String text) throws XMPPException, IOException, SmackException {
-        service.sendMessage(generateMessage(text));
-    }
-
-    /**
-     * Add a message listener. The message listener will be notified when new
-     * messages are received. If there was no listener when messages was to be
-     * delivered, the first listener to be added will receive all of the queued
-     * messages.
-     */
-    public void addMessageListener(LLMessageListener listener) {
-        synchronized (listeners) {
-            listeners.add(listener);
-            for (Message message : messageQueue)
-                listener.processMessage(this, message);
-            messageQueue.clear();
-        }
-    }
 }

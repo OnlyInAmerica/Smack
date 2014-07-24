@@ -17,6 +17,7 @@
 package org.jivesoftware.smack.serverless;
 
 
+import org.jivesoftware.smack.ConnectionListener;
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.packet.Packet;
@@ -43,8 +44,8 @@ import java.util.concurrent.CopyOnWriteArraySet;
  */
 public class XMPPLLConnection extends XMPPTCPConnection
 {
-    private final static Set<LLConnectionListener> linkLocalListeners =
-            new CopyOnWriteArraySet<LLConnectionListener>();
+    private final static Set<ConnectionListener<XMPPLLConnection>> linkLocalListeners =
+            new CopyOnWriteArraySet<>();
     
 
     private LLService service;
@@ -170,7 +171,7 @@ public class XMPPLLConnection extends XMPPTCPConnection
      *
      * @param listener A class implementing the LLConnectionListener interface.
      */
-    public static void addLLConnectionListener(LLConnectionListener listener) {
+    public static void addLLConnectionListener(ConnectionListener<XMPPLLConnection> listener) {
         linkLocalListeners.add(listener);
     }
 
@@ -180,7 +181,7 @@ public class XMPPLLConnection extends XMPPTCPConnection
      * @param listener The class implementing the LLConnectionListener interface that
      * is to be removed.
      */
-    public static void removeLLConnectionListener(LLConnectionListener listener) {
+    public static void removeLLConnectionListener(ConnectionListener<XMPPLLConnection> listener) {
         linkLocalListeners.remove(listener);
     }
 
@@ -235,8 +236,8 @@ public class XMPPLLConnection extends XMPPTCPConnection
      * Notify new connection listeners that a new connection has been established.
      */
     private void notifyLLListenersConnected() {
-        for (LLConnectionListener listener : linkLocalListeners) {
-            listener.connectionCreated(this);
+        for (ConnectionListener<XMPPLLConnection> listener : linkLocalListeners) {
+            listener.connected(this);
         }
     }
 

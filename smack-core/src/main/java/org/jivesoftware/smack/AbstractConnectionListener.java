@@ -24,14 +24,14 @@ package org.jivesoftware.smack;
  * 
  * @author Henning Staib
  */
-public class AbstractConnectionListener implements ConnectionListener {
+public class AbstractConnectionListener <T extends XMPPConnection> implements ConnectionListener<T>  {
     @Override
-    public void connected(XMPPConnection connection) {
+    public void connected(T connection) {
         // do nothing
     }
 
     @Override
-    public void authenticated(XMPPConnection connection) {
+    public void authenticated(T connection) {
         // do nothing
     }
 

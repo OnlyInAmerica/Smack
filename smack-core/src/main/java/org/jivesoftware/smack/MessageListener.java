@@ -22,6 +22,6 @@ import org.jivesoftware.smack.packet.Message;
 /**
  *
  */
-public interface MessageListener {
-    void processMessage(Chat chat, Message message);
+public interface MessageListener<T extends Chat> {
+    void processMessage(T chat, Message message);
 }

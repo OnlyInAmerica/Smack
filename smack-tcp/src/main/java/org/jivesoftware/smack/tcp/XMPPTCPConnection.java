@@ -1327,7 +1327,6 @@ public class XMPPTCPConnection extends AbstractXMPPConnection {
                     Packet packet = nextPacket();
                     if (packet != null) {
                         writer.write(packet.toXML().toString());
-
                         if (queue.isEmpty()) {
                             writer.flush();
                         }

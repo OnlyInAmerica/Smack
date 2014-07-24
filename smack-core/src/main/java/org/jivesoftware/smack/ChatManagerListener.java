@@ -22,7 +22,7 @@ package org.jivesoftware.smack;
  *
  * @author Alexander Wenckus
  */
-public interface ChatManagerListener {
+public interface ChatManagerListener<T extends Chat> {
 
     /**
      * Event fired when a new chat is created.
@@ -30,5 +30,5 @@ public interface ChatManagerListener {
      * @param chat the chat that was created.
      * @param createdLocally true if the chat was created by the local user and false if it wasn't.
      */
-    void chatCreated(Chat chat, boolean createdLocally);
+    void chatCreated(T chat, boolean createdLocally);
 }
