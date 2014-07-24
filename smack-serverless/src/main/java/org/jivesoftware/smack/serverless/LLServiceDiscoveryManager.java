@@ -99,6 +99,9 @@ public class LLServiceDiscoveryManager extends ServiceDiscoveryManager {
             }
 
             public void serviceNameChanged(String n, String o) {
+                // mDNS service names should not change after connections
+                // are established, so may remove this logic
+
                 // Remove entries
                 capsManager.removeUserCapsNode(n);
                 capsManager.removeUserCapsNode(o);

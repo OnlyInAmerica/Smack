@@ -27,12 +27,11 @@ import javax.jmdns.ServiceEvent;
 import javax.jmdns.ServiceInfo;
 import javax.jmdns.ServiceListener;
 import javax.jmdns.impl.JmDNSImpl;
-import javax.jmdns.impl.DNSCache;
 
-import java.util.Iterator;
 import java.net.InetAddress;
 import java.io.IOException;
 import java.util.Hashtable;
+import java.util.Map;
 
 /**
  * Implements a LLService using JmDNS.
@@ -127,23 +126,13 @@ public class JmDNSService extends LLService implements ServiceListener {
                 presence.getServiceName(), presence.getPort(), 0, 0, ht);
         jmdns.addServiceListener(SERVICE_TYPE, this);
         try {
-            String originalName = serviceInfo.getQualifiedName();
+            String originalServiceName = serviceInfo.getName();
             jmdns.registerService(serviceInfo);
-            presence.setServiceName(serviceInfo.getName());
+            String realizedServiceName = getRealizedServiceName(serviceInfo);
+            presence.setServiceName(realizedServiceName);
 
-            if (!originalName.equals(serviceInfo.getQualifiedName())) {
-                // Update presence service name
-                // Name collision occurred, lets remove confusing elements
-                // from cache in case something goes wrong
-                JmDNSImpl jmdnsimpl = (JmDNSImpl) jmdns;
-
-                DNSCache cache = jmdnsimpl.getCache();
-                Iterator i = cache.getDNSEntryList(originalName).iterator();
-                while (i.hasNext()) {
-                    i.next();
-                    i.remove();
-                }
-
+            if (!originalServiceName.equals(realizedServiceName)) {
+                serviceNameChanged(realizedServiceName, originalServiceName);
             }
         }
         catch (IOException ioe) {
@@ -153,12 +142,18 @@ public class JmDNSService extends LLService implements ServiceListener {
 
     /**
      * Reregister the DNS-SD service with the daemon.
+     *
+     * Note: This method does not accommodate changes to the mDNS Service Name!
+     * This method may be used to announce changes to the DNS TXT record.
      */
     protected void reannounceService() throws XMPPException {
         try {
+            jmdns.unregisterService(serviceInfo);
             jmdns.registerService(serviceInfo);
-            // TODO: Ensure registerService is an acceptable replacement
-            // for original statement below:
+            // Note that because ServiceInfo objects are tracked
+            // within JmDNS by service name, if that value has changed
+            // we won't be able to successfully remove the 'old' service.
+            // Previously, jmdns exposed the following method:
             //jmdns.reannounceService(serviceInfo);
         }
         catch (IOException ioe) {
@@ -227,4 +222,34 @@ public class JmDNSService extends LLService implements ServiceListener {
     }
 
     /** ^^ {@link javax.jmdns.ServiceListener} ^^ **/
+
+    /**
+     * JmDNS may change the name of a requested service to enforce uniqueness
+     * within its DNS cache. This helper method can be called after {@link javax.jmdns.JmDNS#registerService(javax.jmdns.ServiceInfo)}
+     * with the passed {@link javax.jmdns.ServiceInfo} to attempt to determine the actual service
+     * name registered. e.g: "test@example" may become "test@example (2)"
+     *
+     * @param requestedInfo the ServiceInfo instance passed to {@link javax.jmdns.JmDNS#registerService(javax.jmdns.ServiceInfo)}
+     * @return the unique service name actually being advertised by JmDNS. If no
+     *         match found, return requestedInfo.getName()
+     */
+    private String getRealizedServiceName(ServiceInfo requestedInfo) {
+        Map<String, ServiceInfo> map = ((JmDNSImpl) jmdns).getServices();
+        // Check if requested service name is used verbatim
+        if (map.containsKey(requestedInfo.getKey())) {
+            return map.get(requestedInfo.getKey()).getName();
+        }
+
+        // The service name was altered... Search registered services
+        // e.g test@example.presence._tcp.local would match test@example (2).presence._tcp.local
+        for (ServiceInfo info : map.values()) {
+            if (info.getName().contains(requestedInfo.getName())
+                    && info.getTypeWithSubtype().equals(requestedInfo.getTypeWithSubtype())) {
+                return info.getName();
+            }
+        }
+
+        // No match found! Return expected name
+        return requestedInfo.getName();
+    }
 }
